@@ -622,9 +622,9 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
           </div>{/* END left */}
 
           {/* ── RIGHT: Sticky Sidebar ── */}
-          <aside className="w-80 shrink-0 self-start sticky top-24">
+          <aside className="w-[416px] shrink-0 self-start sticky top-24">
 
-            {/* Pricing Card - Doubled Size (padding only) */}
+            {/* Pricing Card - 30% Larger Card */}
             <div className="bg-white border border-slate-200 rounded-xl p-12 mb-4">
               <p className="text-sm text-slate-500 text-center mb-1">Monthly pricing from</p>
               <p className="text-4xl font-bold text-slate-900 text-center">${listing.price.toLocaleString()}</p>
