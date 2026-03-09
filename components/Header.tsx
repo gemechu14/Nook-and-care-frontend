@@ -7,7 +7,8 @@ export default function Header() {
   const pathname = usePathname();
   const isSearchPage = pathname === "/search";
   const isListingPage = pathname?.startsWith("/listings/");
-  const isWhiteHeader = isSearchPage || isListingPage;
+  const isAssessmentPage = pathname === "/assessment";
+  const isWhiteHeader = isSearchPage || isListingPage || isAssessmentPage;
   
   const headerClasses = isWhiteHeader
     ? "fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200"

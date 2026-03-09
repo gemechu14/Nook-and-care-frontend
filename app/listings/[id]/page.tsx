@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -202,10 +202,125 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
+function CalendarPicker({ onSelect }: { onSelect: (date: Date) => void }) {
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+
+  const today = new Date();
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
+  const handleDateClick = (day: number) => {
+    const selectedDate = new Date(currentYear, currentMonth, day);
+    onSelect(selectedDate);
+  };
+
+  const isToday = (day: number) => {
+    const date = new Date(currentYear, currentMonth, day);
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
+  };
+
+  const isPastDate = (day: number) => {
+    const date = new Date(currentYear, currentMonth, day);
+    return date < today && !isToday(day);
+  };
+
+  return (
+    <div className="w-64">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={handlePrevMonth}
+          className="p-1 hover:bg-slate-100 rounded transition-colors"
+        >
+          <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h3 className="font-semibold text-slate-900">
+          {monthNames[currentMonth]} {currentYear}
+        </h3>
+        <button
+          onClick={handleNextMonth}
+          className="p-1 hover:bg-slate-100 rounded transition-colors"
+        >
+          <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Day names */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {dayNames.map((day) => (
+          <div key={day} className="text-xs font-medium text-slate-500 text-center py-1">
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar days */}
+      <div className="grid grid-cols-7 gap-1">
+        {/* Empty cells for days before month starts */}
+        {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+          <div key={`empty-${i}`} className="aspect-square" />
+        ))}
+
+        {/* Days of the month */}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const disabled = isPastDate(day);
+          const todayClass = isToday(day) ? "bg-teal-600 text-white font-semibold" : "";
+
+          return (
+            <button
+              key={day}
+              onClick={() => !disabled && handleDateClick(day)}
+              disabled={disabled}
+              className={`aspect-square text-sm rounded hover:bg-teal-50 transition-colors ${
+                disabled
+                  ? "text-slate-300 cursor-not-allowed"
+                  : todayClass || "text-slate-700 hover:text-teal-600"
+              }`}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function ListingDetailPage({ params }: { params: { id: string } }) {
   const [activeTab, setActiveTab] = useState<"services" | "reviews" | "location">("services");
   const [scheduleTourOpen, setScheduleTourOpen] = useState(false);
   const [requestInfoOpen, setRequestInfoOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const listing = mockListings[params.id] || mockListings["3"];
 
   // Form states for Schedule Tour
@@ -225,6 +340,39 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
     phone: "",
     message: "",
   });
+
+  // Format date for display
+  const formatDate = (date: Date): string => {
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    const daySuffix = day === 1 || day === 21 || day === 31 ? "st" : day === 2 || day === 22 ? "nd" : day === 3 || day === 23 ? "rd" : "th";
+    return `${month} ${day}${daySuffix}, ${year}`;
+  };
+
+  const handleDateSelect = (date: Date) => {
+    setTourForm({ ...tourForm, date: formatDate(date) });
+    setCalendarOpen(false);
+  };
+
+  // Close calendar when clicking outside
+  const calendarRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+        setCalendarOpen(false);
+      }
+    };
+
+    if (calendarOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [calendarOpen]);
 
   return (
     <div className="min-h-screen bg-white pt-16">
@@ -664,6 +812,30 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
               </div>
             </div>
 
+            {/* Action Buttons - Always Visible */}
+            <div className="bg-white border border-slate-200 rounded-xl p-5 mb-4">
+              <div className="flex items-center justify-around">
+                <button className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                  <span className="text-xs font-medium">Save</span>
+                </button>
+                <button className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  <span className="text-xs font-medium">Print</span>
+                </button>
+                <button className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  <span className="text-xs font-medium">Share</span>
+                </button>
+              </div>
+            </div>
+
             {/* Schedule Tour Form - Inline */}
             {scheduleTourOpen && (
               <div className="bg-white border border-slate-200 rounded-xl p-6 mb-4">
@@ -671,24 +843,37 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
 
                 <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setScheduleTourOpen(false); }}>
                   {/* Preferred Date */}
-                  <div>
+                  <div className="relative" ref={calendarRef}>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Preferred Date <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                        <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <button
+                        type="button"
+                        onClick={() => setCalendarOpen(!calendarOpen)}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 cursor-pointer z-10"
+                      >
+                        <svg className="w-5 h-5 text-slate-400 hover:text-teal-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                      </div>
+                      </button>
                       <input
                         type="text"
                         value={tourForm.date}
                         onChange={(e) => setTourForm({ ...tourForm, date: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                        onClick={() => setCalendarOpen(!calendarOpen)}
+                        className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none cursor-pointer"
                         placeholder="Select date"
                         required
+                        readOnly
                       />
+                      
+                      {/* Calendar Picker */}
+                      {calendarOpen && (
+                        <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-xl z-50 p-4">
+                          <CalendarPicker onSelect={handleDateSelect} />
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -874,29 +1059,6 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
-              <div className="flex items-center justify-around">
-                <button className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                  <span className="text-xs font-medium">Save</span>
-                </button>
-                <button className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
-                  <span className="text-xs font-medium">Print</span>
-                </button>
-                <button className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
-                  <span className="text-xs font-medium">Share</span>
-                </button>
-              </div>
-            </div>
 
           </aside>{/* END right */}
 
