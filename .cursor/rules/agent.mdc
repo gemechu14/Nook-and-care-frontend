@@ -1,0 +1,130 @@
+---
+alwaysApply: true
+---
+
+# Nook and Care — Agent Rules
+
+## What This Project Is
+
+**Nook and Care** (`find-your-nook.base44.app`) is a **senior housing marketplace platform** helping families find verified senior care facilities. It is built with **Next.js 14** (App Router), **TypeScript**, and **Tailwind CSS**.
+
+The platform serves:
+- **Families / Seniors** — search, compare, tour-book facilities
+- **Housing Providers** — list, manage, and showcase their facilities
+- **Agents** — access leads and premium data
+- **Platform Administrators** — verify listings and manage the marketplace
+
+---
+
+## Project Structure
+
+```
+app/                    # Next.js App Router pages
+  page.tsx              # Homepage (landing page)
+  search/page.tsx       # Search & filter listings
+  listings/[id]/        # Listing detail page
+  about/page.tsx
+  contact/page.tsx
+components/             # Reusable UI components
+  Header.tsx
+  Footer.tsx
+  SearchBar.tsx
+  ListingCard.tsx
+  CareTypeCard.tsx
+types/index.ts          # Shared TypeScript types
+docs/                   # System design documentation
+```
+
+Key files:
+- [app/page.tsx](mdc:app/page.tsx) — Full homepage with all sections
+- [components/Header.tsx](mdc:components/Header.tsx) — Navigation header
+- [components/Footer.tsx](mdc:components/Footer.tsx) — Site footer
+- [components/ListingCard.tsx](mdc:components/ListingCard.tsx) — Facility listing card
+- [types/index.ts](mdc:types/index.ts) — Shared TypeScript types
+
+---
+
+## Design System
+
+### Colors (Tailwind)
+- **Primary:** `teal-600` (#0d9488) — buttons, badges, links, accents
+- **Primary hover:** `teal-700` (#0f766e)
+- **Background:** `white` / `slate-50` / `teal-50`
+- **Footer background:** `slate-900` (#0f172a)
+- **Text:** `slate-900` headings, `slate-600` body, `slate-400` muted
+- **Warning/Urgent:** `amber-400` / `yellow-400` banner
+
+### Typography
+- Headings: `font-bold` or `font-semibold`, `text-slate-900`
+- Body: `text-slate-600`, `leading-relaxed`
+- Links: `text-teal-600 hover:text-teal-700`
+
+### Components
+- Buttons (primary): `bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors`
+- Cards: `bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow`
+- Badges: `bg-teal-600 text-white text-xs px-2 py-1 rounded-full`
+
+---
+
+## Coding Standards
+
+### TypeScript
+- Use strict TypeScript — no `any` types
+- Define interfaces in `types/index.ts` for shared types
+- Use inline interfaces for component-only props
+- Always type function parameters and return types
+
+### React / Next.js
+- Use `"use client"` directive only when needed (interactivity/hooks)
+- Server components by default for static/data pages
+- Use `next/link` for navigation, `next/image` for images
+- Use App Router conventions (`app/` directory, `page.tsx`, `layout.tsx`)
+
+### Styling
+- Use Tailwind CSS utility classes exclusively — no inline styles, no CSS modules
+- Follow mobile-first responsive design (`sm:`, `md:`, `lg:`, `xl:`)
+- Use `max-w-7xl mx-auto px-4` for page containers
+- Prefer `gap-*` over `margin` for flex/grid spacing
+
+### File Conventions
+- Components: PascalCase (`ListingCard.tsx`)
+- Pages: lowercase with hyphens as directories (`app/find-care/page.tsx`)
+- Types: camelCase interfaces, SCREAMING_SNAKE for enums
+
+---
+
+## Pages Reference (from site screenshots)
+
+| Route | Description |
+|-------|-------------|
+| `/` | Homepage: Hero search, care types, featured communities, how-to guide, CTA sections, resources |
+| `/search` | Search page with filters sidebar + listings grid |
+| `/listings/[id]` | Facility detail: gallery, amenities, services, tour booking |
+| `/assessment` | Care needs assessment wizard |
+| `/providers` | For facility owners: list your facility |
+| `/login` | Sign in page |
+| `/register` | Create account page |
+
+---
+
+## Key UI Sections (Homepage)
+
+1. **Hero** — background image overlay, urgent placement banner, headline with teal accent, search form (location + care type + budget), stats bar
+2. **Care Types** — 5 cards: Assisted Living, Memory Care, Independent Living, Adult Family Home, Skilled Nursing
+3. **Featured Communities** — 4-column card grid with images, badges, rating, price, "View Details" button
+4. **How to Choose** — 4 numbered steps: Assess → Search → Tour → Decide
+5. **Trust Badges** — Licensed & Verified, Quality Standards, Real Reviews, No Cost to You
+6. **Create Account** — Split panel with feature list + image
+7. **For Facility Owners** — 3 benefit cards + "List Your Facility" CTA
+8. **Resources** — 2×2 resource grid + Urgent Placement Assistance panel
+9. **Footer** — Dark background, 4 columns (brand, Find Care, Resources, Support)
+
+---
+
+## Quick Reference
+
+- **System design:** `docs/nookcare-system-design.qmd`
+- **Color palette:** Teal-600 primary, slate-900 footer, white/slate-50 backgrounds
+- **Phone:** 1-800-555-0123
+- **Tagline:** "Find the right care for your loved one"
+- **Stats:** 2,500+ verified communities · 50,000+ family reviews · Free & confidential
