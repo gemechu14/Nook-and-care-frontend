@@ -49,14 +49,14 @@ function StarRating({ rating }: { rating: number }) {
 
 export default function ListingCard({ listing }: ListingCardProps) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
       {/* Image */}
-      <div className="relative h-48">
+      <div className="relative h-48 overflow-hidden">
         <Image
           src={listing.image}
           alt={listing.title}
           fill
-          className="object-cover"
+          className="object-cover transition-transform duration-300 group-hover:scale-110"
         />
         {/* Beds badge */}
         <div className="absolute top-3 left-3">

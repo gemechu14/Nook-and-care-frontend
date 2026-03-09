@@ -329,25 +329,25 @@ export default function HomePage() {
     <div className="flex flex-col">
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative h-[80vh] flex items-center overflow-hidden bg-slate-700">
+      <section className="relative h-[80vh] max-h-[8200px] min-h-[580px] flex items-center overflow-hidden bg-slate-700">
         {/* Background image */}
         <div className="absolute inset-0">
           <Image
             src="https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=1800&q=80"
             alt="Caregiver with senior"
             fill
-            className="object-cover object-center opacity-60"
+            className="object-cover object-center opacity-90"
             priority
           />
           {/* Gradient overlay — dark left, fade right */}
           <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-slate-800/50 to-transparent" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 pt-20 pb-12 w-full h-full flex flex-col justify-center">
+        <div className="relative z-10 px-[144px] pt-16 pb-10 w-full h-full flex flex-col justify-start">
           <div className="w-3/4">
             {/* Urgent banner - left aligned */}
-            <div className="flex justify-start mb-6 mt-2">
-              <div className="inline-flex items-center gap-3 bg-yellow-50 px-5 py-3 rounded-2xl text-sm font-medium shadow-sm">
+            <div className="flex justify-start mb-6 mt-8">
+              <div className="inline-flex items-center gap-4 bg-yellow-50 px-6 py-3 rounded-xl text-sm font-medium shadow-sm">
               <svg className="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
@@ -362,13 +362,13 @@ export default function HomePage() {
               <span className="text-teal-400">loved one</span>
             </h1>
 
-            <p className="text-base sm:text-lg text-white mb-8 leading-relaxed text-left max-w-2xl">
+            <p className="text-base sm:text-lg text-white mb-8 leading-relaxed text-left max-w-lg">
               We understand this is a big decision. Let us help you find a safe, caring
               community where your family member can thrive.
             </p>
 
             {/* Search Form - left aligned */}
-            <div className="mb-6 max-w-[45rem]">
+            <div className="mb-6 max-w-[38rem]">
               <HomeSearchForm />
             </div>
 

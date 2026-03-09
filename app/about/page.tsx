@@ -1,7 +1,7 @@
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-16">
+      <div className="w-full px-4 md:px-8 lg:px-12 xl:px-16 py-16">
         <h1 className="text-4xl font-bold mb-8 text-center">About Nook and Care</h1>
         
         <div className="bg-white rounded-lg shadow-md p-8 space-y-6">

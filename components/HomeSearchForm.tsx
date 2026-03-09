@@ -21,7 +21,7 @@ export default function HomeSearchForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white rounded-xl shadow-lg p-10 space-y-4 w-full"
+      className="bg-white rounded-2xl shadow-lg p-6 space-y-3 w-full"
     >
       {/* Location */}
       <div className="relative">
@@ -49,7 +49,7 @@ export default function HomeSearchForm() {
           placeholder="City, State, or ZIP code"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+          className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
         />
       </div>
 
@@ -58,7 +58,7 @@ export default function HomeSearchForm() {
         <select
           value={careType}
           onChange={(e) => setCareType(e.target.value)}
-          className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white text-sm"
+          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white text-sm"
         >
           <option value="">Type of care needed</option>
           <option value="assisted-living">Assisted Living</option>
@@ -71,7 +71,7 @@ export default function HomeSearchForm() {
         <select
           value={budget}
           onChange={(e) => setBudget(e.target.value)}
-          className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white text-sm"
+          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white text-sm"
         >
           <option value="">Monthly budget</option>
           <option value="1000-2000">$1,000 – $2,000</option>
@@ -85,7 +85,7 @@ export default function HomeSearchForm() {
       {/* Submit */}
       <button
         type="submit"
-        className="w-full flex items-center justify-center gap-2 bg-teal-600 text-white py-2.5 rounded-lg font-semibold hover:bg-teal-700 transition-colors text-base mt-2"
+        className="w-full flex items-center justify-center gap-2 bg-teal-600 text-white py-3.5 rounded-xl font-semibold hover:bg-teal-700 transition-colors text-base"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
