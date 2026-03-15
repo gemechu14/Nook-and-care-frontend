@@ -1,0 +1,118 @@
+import Link from "next/link";
+import { Badge } from "@/components/admin/shared/Badge";
+import { Loader } from "@/components/admin/shared/Loader";
+import { CARE_TYPE_LABELS } from "@/types";
+import type { ApiListing } from "@/types";
+
+interface ListingsSectionProps {
+  listings: ApiListing[];
+  loading: boolean;
+  onImageManage: (listing: ApiListing) => void;
+  onAddListing?: () => void;
+}
+
+export function ListingsSection({ listings, loading, onImageManage, onAddListing }: ListingsSectionProps) {
+  if (loading) return <Loader />;
+
+  const activeCount = listings.filter(l => l.status === "ACTIVE").length;
+  const pendingCount = listings.filter(l => l.status === "PENDING").length;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">Your Listings</h2>
+          <p className="text-sm text-slate-500">Manage and update your facility listings</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {activeCount > 0 && (
+            <Badge status={`${activeCount} Active`} />
+          )}
+          {pendingCount > 0 && (
+            <Badge status={`${pendingCount} Pending`} />
+          )}
+        </div>
+      </div>
+
+      {onAddListing && (
+        <div className="flex justify-end">
+          <button 
+            onClick={onAddListing}
+            className="flex items-center gap-2 bg-teal-600 text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-teal-700 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Listing
+          </button>
+        </div>
+      )}
+      
+      {listings.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+          <p className="text-lg font-medium text-slate-900 mb-2">No listings yet</p>
+          <p className="text-sm text-slate-500 mb-6">Create your first listing to get started</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[800px]">
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr>
+                  <th className="text-left px-4 sm:px-5 py-3 text-slate-500 font-medium">Listing</th>
+                  <th className="text-left px-4 py-3 text-slate-500 font-medium">Care Type</th>
+                  <th className="text-left px-4 py-3 text-slate-500 font-medium hidden md:table-cell">Location</th>
+                  <th className="text-right px-4 py-3 text-slate-500 font-medium hidden sm:table-cell">Price</th>
+                  <th className="text-center px-4 py-3 text-slate-500 font-medium">Status</th>
+                  <th className="text-right px-4 sm:px-5 py-3 text-slate-500 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {listings.map((l) => (
+                  <tr key={l.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td className="px-4 sm:px-5 py-4">
+                      <p className="font-medium text-slate-900 truncate max-w-[180px]">{l.title}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">ID: {l.id.slice(0, 8)}…</p>
+                    </td>
+                    <td className="px-4 py-4 text-slate-600 whitespace-nowrap">
+                      {CARE_TYPE_LABELS[l.care_type] ?? l.care_type}
+                    </td>
+                    <td className="px-4 py-4 text-slate-600 whitespace-nowrap hidden md:table-cell">
+                      {[l.city, l.state].filter(Boolean).join(", ") || "—"}
+                    </td>
+                    <td className="px-4 py-4 text-right text-slate-700 font-medium whitespace-nowrap hidden sm:table-cell">
+                      {l.price ? `$${l.price.toLocaleString()}/mo` : "—"}
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <Badge status={l.status} />
+                      {l.status === "PENDING" && (
+                        <p className="text-xs text-amber-600 mt-1 whitespace-nowrap">Under review</p>
+                      )}
+                    </td>
+                    <td className="px-4 sm:px-5 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => onImageManage(l)}
+                          className="text-xs font-medium px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:border-teal-300 hover:text-teal-600 transition-colors"
+                        >
+                          Images
+                        </button>
+                        <Link 
+                          href={`/providers/listings/${l.id}`} 
+                          className="text-xs font-medium px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:border-teal-300 hover:text-teal-600 transition-colors"
+                        >
+                          Manage
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+

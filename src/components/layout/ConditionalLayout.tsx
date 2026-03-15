@@ -15,12 +15,13 @@ export default function ConditionalLayout({
 }) {
   const pathname = usePathname();
   const isAdminPage = pathname?.startsWith("/admin");
+  const isProviderPage = pathname?.startsWith("/providers");
 
   return (
     <>
-      {!isAdminPage && <Header />}
+      {!isAdminPage && !isProviderPage && <Header />}
       {children}
-      {!isAdminPage && <Footer />}
+      {!isAdminPage && !isProviderPage && <Footer />}
     </>
   );
 }
