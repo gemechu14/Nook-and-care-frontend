@@ -114,7 +114,7 @@ export function ImageManagerModal({ listing, onClose }: ImageManagerModalProps) 
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {images.sort((a, b) => a.display_order - b.display_order).map((img) => {
-                const src = img.image_url ?? listingImagesApi.getDownloadUrl(img.id);
+                const src = listingImagesApi.getImageUrl(img.image_url, img.id);
                 return (
                   <div key={img.id} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square">
                     {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -96,7 +96,7 @@ export default function AdminListingDetailPage() {
 
   const listingImages = images.length > 0
     ? images.sort((a, b) => a.display_order - b.display_order).map((img) =>
-        img.image_url ?? listingImagesApi.getDownloadUrl(img.id)
+        listingImagesApi.getImageUrl(img.image_url, img.id)
       )
     : ["https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80"];
 

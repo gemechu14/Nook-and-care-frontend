@@ -233,16 +233,89 @@ function FeaturePanel<C extends { id: string; name: string }, R extends { id: st
 
 // ─── Images Tab ───────────────────────────────────────────────────────────────
 
+interface PreviewImage {
+  file: File;
+  preview: string;
+  isPrimary: boolean;
+}
+
 function ImagesTab({ listing, images, onRefresh }: { listing: ApiListing; images: ApiListingImage[]; onRefresh: () => void }) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewImages, setPreviewImages] = useState<PreviewImage[]>([]);
+  const [fullscreenImage, setFullscreenImage] = useState<{ src: string; alt: string } | null>(null);
 
-  const uploadFile = async (file: File, isPrimary = false) => {
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []).filter((f) => f.type.startsWith("image/"));
+    if (files.length === 0) return;
+
+    const newPreviews: PreviewImage[] = files.map((file, index) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      isPrimary: previewImages.length === 0 && images.length === 0 && index === 0,
+    }));
+
+    setPreviewImages((prev) => [...prev, ...newPreviews]);
+    e.target.value = "";
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+    if (files.length === 0) return;
+
+    const newPreviews: PreviewImage[] = files.map((file, index) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      isPrimary: previewImages.length === 0 && images.length === 0 && index === 0,
+    }));
+
+    setPreviewImages((prev) => [...prev, ...newPreviews]);
+  };
+
+  const removePreview = (index: number) => {
+    setPreviewImages((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      // Revoke object URL to prevent memory leak
+      URL.revokeObjectURL(prev[index].preview);
+      // If we removed the primary, make the first one primary
+      if (prev[index].isPrimary && updated.length > 0) {
+        updated[0].isPrimary = true;
+      }
+      return updated;
+    });
+  };
+
+  const setPreviewPrimary = (index: number) => {
+    setPreviewImages((prev) =>
+      prev.map((img, i) => ({ ...img, isPrimary: i === index }))
+    );
+  };
+
+  const uploadAll = async () => {
+    if (previewImages.length === 0) return;
+
     setUploading(true);
     setError(null);
     try {
-      await listingImagesApi.upload(listing.id, file, images.length, isPrimary);
+      const startOrder = images.length;
+      const files = previewImages.map((p) => p.file);
+      const displayOrders = previewImages.map((_, i) => startOrder + i);
+      const primaryIndex = previewImages.findIndex((p) => p.isPrimary);
+
+      // Use batch upload API
+      await listingImagesApi.uploadBatch(
+        listing.id,
+        files,
+        displayOrders,
+        primaryIndex >= 0 ? primaryIndex : undefined
+      );
+
+      // Clean up preview URLs
+      previewImages.forEach((img) => URL.revokeObjectURL(img.preview));
+      setPreviewImages([]);
       onRefresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
@@ -251,16 +324,10 @@ function ImagesTab({ listing, images, onRefresh }: { listing: ApiListing; images
     }
   };
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    files.forEach((f, i) => uploadFile(f, i === 0 && images.length === 0));
-    e.target.value = "";
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); setDragOver(false);
-    const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
-    files.forEach((f, i) => uploadFile(f, i === 0 && images.length === 0));
+  const cancelPreview = () => {
+    previewImages.forEach((img) => URL.revokeObjectURL(img.preview));
+    setPreviewImages([]);
+    setError(null);
   };
 
   const removeImage = async (id: string) => {
@@ -273,6 +340,13 @@ function ImagesTab({ listing, images, onRefresh }: { listing: ApiListing; images
     onRefresh();
   };
 
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      previewImages.forEach((img) => URL.revokeObjectURL(img.preview));
+    };
+  }, []);
+
   return (
     <div className="space-y-5">
       {/* Upload area */}
@@ -282,7 +356,7 @@ function ImagesTab({ listing, images, onRefresh }: { listing: ApiListing; images
         onDrop={handleDrop}
         className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-10 cursor-pointer transition-colors ${
           dragOver ? "border-teal-400 bg-teal-50" : "border-slate-300 hover:border-teal-400 hover:bg-slate-50"
-        }`}
+        } ${uploading ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center">
           <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -295,40 +369,219 @@ function ImagesTab({ listing, images, onRefresh }: { listing: ApiListing; images
           </p>
           <p className="text-xs text-slate-500 mt-1">JPEG, PNG, WebP, GIF, BMP — max 10MB each</p>
         </div>
-        <input type="file" multiple accept="image/*" onChange={handleFileInput} disabled={uploading} className="sr-only" />
+        <input 
+          type="file" 
+          multiple 
+          accept="image/*" 
+          onChange={handleFileInput} 
+          disabled={uploading} 
+          className="sr-only" 
+        />
       </label>
 
-      {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>}
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {error}
+        </div>
+      )}
 
-      {/* Image grid */}
-      {images.length === 0 ? (
-        <p className="text-center text-slate-400 text-sm py-6">No images yet. Upload some using the area above.</p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {images.sort((a, b) => a.display_order - b.display_order).map((img) => {
-            const src = img.image_url ?? listingImagesApi.getDownloadUrl(img.id);
-            return (
-              <div key={img.id} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square bg-slate-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt="" className="w-full h-full object-cover" />
-                {img.is_primary && (
-                  <div className="absolute top-2 left-2 bg-teal-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">Primary</div>
+      {/* Preview Section */}
+      {previewImages.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-900">
+              Preview ({previewImages.length} {previewImages.length === 1 ? "image" : "images"})
+            </h3>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={cancelPreview}
+                disabled={uploading}
+                className="px-4 py-1.5 text-xs font-medium text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={uploadAll}
+                disabled={uploading}
+                className="px-4 py-1.5 text-xs font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {uploading ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Upload All
+                  </>
                 )}
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
-                  {!img.is_primary && (
-                    <button onClick={() => setPrimary(img.id)}
-                      className="w-full bg-white text-slate-700 text-xs font-medium px-2 py-1.5 rounded-lg hover:bg-teal-50 hover:text-teal-600 transition-colors">
-                      Set Primary
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {previewImages.map((preview, index) => (
+              <div
+                key={index}
+                className="relative group rounded-xl overflow-hidden border-2 border-slate-200 aspect-square bg-slate-100 shadow-sm hover:shadow-md transition-shadow"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={preview.preview}
+                  alt={`Preview ${index + 1}`}
+                  className="w-full h-full object-cover cursor-pointer"
+                  onClick={() => setFullscreenImage({ src: preview.preview, alt: `Preview ${index + 1}` })}
+                />
+                {preview.isPrimary && (
+                  <div className="absolute top-2 left-2 bg-teal-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full shadow-md">
+                    Primary
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className="absolute bottom-0 left-0 right-0 p-2 space-y-1.5 pointer-events-auto">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFullscreenImage({ src: preview.preview, alt: `Preview ${index + 1}` });
+                      }}
+                      className="w-full bg-white/95 text-slate-700 text-xs font-medium px-2 py-1.5 rounded-lg hover:bg-teal-50 hover:text-teal-600 transition-colors backdrop-blur-sm"
+                    >
+                      View Fullscreen
                     </button>
-                  )}
-                  <button onClick={() => removeImage(img.id)}
-                    className="w-full bg-red-600 text-white text-xs font-medium px-2 py-1.5 rounded-lg hover:bg-red-700 transition-colors">
-                    Delete
+                    {!preview.isPrimary && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewPrimary(index);
+                        }}
+                        className="w-full bg-white/95 text-slate-700 text-xs font-medium px-2 py-1.5 rounded-lg hover:bg-teal-50 hover:text-teal-600 transition-colors backdrop-blur-sm"
+                      >
+                        Set Primary
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removePreview(index);
+                      }}
+                      className="w-full bg-red-600/95 text-white text-xs font-medium px-2 py-1.5 rounded-lg hover:bg-red-700 transition-colors backdrop-blur-sm"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+                <div className="absolute top-2 right-2">
+                  <button
+                    onClick={() => removePreview(index)}
+                    className="w-6 h-6 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center transition-colors backdrop-blur-sm"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
                 </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Existing Image grid */}
+      {images.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-slate-900">Uploaded Images ({images.length})</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {images.sort((a, b) => a.display_order - b.display_order).map((img) => {
+              const src = listingImagesApi.getImageUrl(img.image_url, img.id);
+              return (
+                <div key={img.id} className="relative group rounded-xl overflow-hidden border-2 border-slate-200 aspect-square bg-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img 
+                    src={src} 
+                    alt="" 
+                    className="w-full h-full object-cover cursor-pointer" 
+                    onClick={() => setFullscreenImage({ src, alt: `Image ${img.display_order + 1}` })}
+                  />
+                  {img.is_primary && (
+                    <div className="absolute top-2 left-2 bg-teal-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full shadow-md z-10">
+                      Primary
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <div className="absolute bottom-0 left-0 right-0 p-2 space-y-1.5 pointer-events-auto">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFullscreenImage({ src, alt: `Image ${img.display_order + 1}` });
+                        }}
+                        className="w-full bg-white/95 text-slate-700 text-xs font-medium px-2 py-1.5 rounded-lg hover:bg-teal-50 hover:text-teal-600 transition-colors backdrop-blur-sm"
+                      >
+                        View Fullscreen
+                      </button>
+                      {!img.is_primary && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPrimary(img.id);
+                          }}
+                          className="w-full bg-white/95 text-slate-700 text-xs font-medium px-2 py-1.5 rounded-lg hover:bg-teal-50 hover:text-teal-600 transition-colors backdrop-blur-sm"
+                        >
+                          Set Primary
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeImage(img.id);
+                        }}
+                        className="w-full bg-red-600/95 text-white text-xs font-medium px-2 py-1.5 rounded-lg hover:bg-red-700 transition-colors backdrop-blur-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {images.length === 0 && previewImages.length === 0 && (
+        <p className="text-center text-slate-400 text-sm py-6">No images yet. Upload some using the area above.</p>
+      )}
+
+      {/* Fullscreen Image Modal */}
+      {fullscreenImage && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <button
+            onClick={() => setFullscreenImage(null)}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors backdrop-blur-sm z-10"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="relative max-w-7xl max-h-full w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={fullscreenImage.src}
+              alt={fullscreenImage.alt}
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            />
+          </div>
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/80 text-sm">
+            Click outside to close
+          </div>
         </div>
       )}
     </div>
