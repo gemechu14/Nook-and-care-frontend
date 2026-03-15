@@ -39,3 +39,6 @@ export const catalogApi = {
   treatmentServices: makeList<TreatmentService>("treatment-services"),
 };
 
+
+
+

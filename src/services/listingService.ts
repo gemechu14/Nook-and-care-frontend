@@ -54,3 +54,6 @@ export const listingsApi = {
     api.post<ApiListing>(`/listings/${id}/feature?is_featured=${isFeatured}`),
 };
 
+
+
+

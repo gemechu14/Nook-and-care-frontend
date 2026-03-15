@@ -438,7 +438,7 @@ export default function Header() {
 
             {/* I'm a Provider button for FAMILY/SENIOR users - after avatar (rightmost) */}
             {!loading && user && isFamily && !hasProvider && (
-              <button
+              <button 
                 onClick={() => setShowProviderModal(true)}
                 className={`flex items-center gap-2 ${isWhiteHeader 
                   ? "bg-white border border-slate-300 text-slate-900 hover:bg-slate-50" 

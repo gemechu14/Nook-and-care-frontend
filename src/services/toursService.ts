@@ -39,3 +39,6 @@ export const toursApi = {
     api.post<ApiTour>(`/tours/${id}/complete`),
 };
 
+
+
+

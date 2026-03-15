@@ -12,3 +12,6 @@ export const favoritesApi = {
     api.delete<void>(`/favorites/${favoriteId}`),
 };
 
+
+
+
