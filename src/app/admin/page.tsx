@@ -223,17 +223,17 @@ function ListingsSection({ listings, onActivate, loading }: {
                 <td className="px-4 py-4 text-right text-slate-700 font-medium whitespace-nowrap">{l.price ? `$${l.price.toLocaleString()}` : "—"}</td>
                 <td className="px-4 py-4 text-center"><Badge status={l.status} /></td>
                 <td className="px-5 py-4 text-right">
-                  {l.status === "PENDING" && (
-                    <button onClick={() => onActivate(l.id)}
-                      className="text-xs font-medium px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors">
-                      Approve
-                    </button>
-                  )}
-                  {l.status === "ACTIVE" && (
-                    <Link href={`/listings/${l.id}`} className="text-xs font-medium px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:border-teal-300 hover:text-teal-600 transition-colors">
+                  <div className="flex items-center justify-end gap-2">
+                    <Link href={`/admin/listings/${l.id}`} className="text-xs font-medium px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:border-teal-300 hover:text-teal-600 transition-colors">
                       View
                     </Link>
-                  )}
+                    {l.status === "PENDING" && (
+                      <button onClick={() => onActivate(l.id)}
+                        className="text-xs font-medium px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors">
+                        Approve
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

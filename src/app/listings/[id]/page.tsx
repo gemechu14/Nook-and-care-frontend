@@ -334,6 +334,27 @@ export default function ListingDetailPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
 
+  // Form states for Schedule Tour - moved before early returns to fix hook order
+  const [tourForm, setTourForm] = useState({
+    date: "March 13th, 2026",
+    time: "",
+    name: "",
+    email: "",
+    phone: "",
+    requests: "",
+  });
+
+  // Form states for Request Information - moved before early returns to fix hook order
+  const [infoForm, setInfoForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+
+  // Calendar ref - moved before early returns to fix hook order
+  const calendarRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!id) { setPageError("Invalid listing ID."); setPageLoading(false); return; }
     // Check if it's a mock ID (1-4) — use mock data; otherwise fetch from API
@@ -353,6 +374,23 @@ export default function ListingDetailPage() {
       }
     })();
   }, [id]);
+
+  // Close calendar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+        setCalendarOpen(false);
+      }
+    };
+
+    if (calendarOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [calendarOpen]);
 
   // Build a unified listing object from either API or mock data
   const rawMock = id ? mockListings[id] : null;
@@ -398,24 +436,6 @@ export default function ListingDetailPage() {
     </div>
   );
 
-  // Form states for Schedule Tour
-  const [tourForm, setTourForm] = useState({
-    date: "March 13th, 2026",
-    time: "",
-    name: "",
-    email: "",
-    phone: "",
-    requests: "",
-  });
-
-  // Form states for Request Information
-  const [infoForm, setInfoForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    message: "",
-  });
-
   // Format date for display
   const formatDate = (date: Date): string => {
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -430,24 +450,6 @@ export default function ListingDetailPage() {
     setTourForm({ ...tourForm, date: formatDate(date) });
     setCalendarOpen(false);
   };
-
-  // Close calendar when clicking outside
-  const calendarRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
-        setCalendarOpen(false);
-      }
-    };
-
-    if (calendarOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [calendarOpen]);
 
   return (
     <div className="min-h-screen bg-white pt-16">
