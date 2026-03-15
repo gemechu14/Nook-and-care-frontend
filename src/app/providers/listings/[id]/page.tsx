@@ -34,11 +34,12 @@ interface FeaturePanelProps<C extends { id: string; name: string }, R extends { 
   onAdd: (itemId: string) => Promise<void>; 
   onAddBatch?: (itemIds: string[]) => Promise<void>;
   onRemove: (recordId: string) => Promise<void>;
+  onRemoveBatch?: (itemIds: string[]) => Promise<void>;
   savingId: string | null;
 }
 
 function FeaturePanel<C extends { id: string; name: string }, R extends { id: string }>({
-  title, catalogItems, activeRecords, getItemId, onAdd, onAddBatch, onRemove, savingId,
+  title, catalogItems, activeRecords, getItemId, onAdd, onAddBatch, onRemove, onRemoveBatch, savingId,
 }: FeaturePanelProps<C, R>) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -129,7 +130,16 @@ function FeaturePanel<C extends { id: string; name: string }, R extends { id: st
               >
                 <span>{name}</span>
                 <button
-                  onClick={() => onRemove(record.id)}
+                  onClick={async () => {
+                    const itemId = getItemId(record);
+                    if (onRemoveBatch) {
+                      // Use batch delete when available (even for single items)
+                      await onRemoveBatch([itemId]);
+                    } else {
+                      // Fallback to individual delete
+                      await onRemove(record.id);
+                    }
+                  }}
                   disabled={isRemoving}
                   className="text-teal-600 hover:text-teal-700 disabled:opacity-50"
                 >
@@ -393,11 +403,41 @@ export default function ListingManagePage() {
       const imgs = await listingImagesApi.getByListing(listingId).catch(() => []);
       setImages(imgs);
 
+      // Helper to extract features from nested API response
+      const extractFeatures = <T extends { id: string }>(
+        items: unknown,
+        nestedKey: string,
+        listingId: string
+      ): T[] => {
+        if (!items || !Array.isArray(items)) return [];
+        return items.map((item: any) => {
+          const nested = item[nestedKey];
+          const base: any = {
+            id: item.id,
+            listing_id: listingId,
+            [`${nestedKey}_id`]: nested?.id ?? "",
+            created_at: item.created_at ?? new Date().toISOString(),
+          };
+          if (nestedKey === "certification" && "license_number" in item) {
+            base.license_number = item.license_number ?? null;
+          }
+          if (nestedKey === "house_rule" && "display_order" in item) {
+            base.display_order = item.display_order ?? 0;
+          }
+          if (nestedKey === "equipment" && "quantity" in item) {
+            base.quantity = item.quantity ?? 1;
+          }
+          if (nestedKey === "treatment_service") {
+            base.price = item.price ?? null;
+            base.is_included = item.is_included ?? false;
+          }
+          return base as T;
+        });
+      };
+
       const [
         amenitiesCat, activitiesCat, langCat, certCat, diningCat,
         safetyCat, insuranceCat, rulesCat, equipCat, servicesCat,
-        amenitiesActive, activitiesActive, langActive, certActive, diningActive,
-        safetyActive, insuranceActive, rulesActive, equipActive, servicesActive,
       ] = await Promise.allSettled([
         catalogApi.amenities.list({ limit: 200 }),
         catalogApi.activities.list({ limit: 200 }),
@@ -409,16 +449,6 @@ export default function ListingManagePage() {
         catalogApi.houseRules.list({ limit: 200 }),
         catalogApi.equipment.list({ limit: 200 }),
         catalogApi.treatmentServices.list({ limit: 200 }),
-        listingFeaturesApi.amenities.list(listingId),
-        listingFeaturesApi.activities.list(listingId),
-        listingFeaturesApi.languages.list(listingId),
-        listingFeaturesApi.certifications.list(listingId),
-        listingFeaturesApi.diningOptions.list(listingId),
-        listingFeaturesApi.safetyFeatures.list(listingId),
-        listingFeaturesApi.insuranceOptions.list(listingId),
-        listingFeaturesApi.houseRules.list(listingId),
-        listingFeaturesApi.equipment.list(listingId),
-        listingFeaturesApi.services.list(listingId),
       ]);
 
       setCatalog({
@@ -433,17 +463,20 @@ export default function ListingManagePage() {
         equipment: equipCat.status === "fulfilled" ? equipCat.value : [],
         services: servicesCat.status === "fulfilled" ? servicesCat.value : [],
       });
+
+      // Extract active features from listing response (nested structure)
+      const listingData = data as any;
       setActiveFeatures({
-        amenities: amenitiesActive.status === "fulfilled" ? amenitiesActive.value : [],
-        activities: activitiesActive.status === "fulfilled" ? activitiesActive.value : [],
-        languages: langActive.status === "fulfilled" ? langActive.value : [],
-        certifications: certActive.status === "fulfilled" ? certActive.value : [],
-        diningOptions: diningActive.status === "fulfilled" ? diningActive.value : [],
-        safetyFeatures: safetyActive.status === "fulfilled" ? safetyActive.value : [],
-        insuranceOptions: insuranceActive.status === "fulfilled" ? insuranceActive.value : [],
-        houseRules: rulesActive.status === "fulfilled" ? rulesActive.value : [],
-        equipment: equipActive.status === "fulfilled" ? equipActive.value : [],
-        services: servicesActive.status === "fulfilled" ? servicesActive.value : [],
+        amenities: extractFeatures<ListingAmenityRecord>(listingData.amenities, "amenity", listingId),
+        activities: extractFeatures<ListingActivityRecord>(listingData.activities, "activity", listingId),
+        languages: extractFeatures<ListingLanguageRecord>(listingData.languages, "language", listingId),
+        certifications: extractFeatures<ListingCertificationRecord>(listingData.certifications, "certification", listingId),
+        diningOptions: extractFeatures<ListingDiningOptionRecord>(listingData.dining_options, "dining_option", listingId),
+        safetyFeatures: extractFeatures<ListingSafetyFeatureRecord>(listingData.safety_features, "safety_feature", listingId),
+        insuranceOptions: extractFeatures<ListingInsuranceOptionRecord>(listingData.insurance_options, "insurance_option", listingId),
+        houseRules: extractFeatures<ListingHouseRuleRecord>(listingData.house_rules, "house_rule", listingId),
+        equipment: extractFeatures<ListingEquipmentRecord>(listingData.equipment, "equipment", listingId),
+        services: extractFeatures<ListingServiceRecord>(listingData.services, "treatment_service", listingId),
       });
     } catch (err) {
       setFetchError(err instanceof Error ? err.message : "Failed to load listing.");
@@ -510,6 +543,7 @@ export default function ListingManagePage() {
       if (!listing || itemIds.length === 0) return;
       try {
         const payloads = itemIds.map(buildPayload);
+        console.log(`[Batch Delete] Calling batch delete with ${itemIds.length} items for ${featureKey}`);
         await removeBatchFn(payloads);
         const itemIdSet = new Set(itemIds);
         setActiveFeatures((prev) => ({ 
