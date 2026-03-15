@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/store/authStore";
@@ -26,43 +26,197 @@ import type {
 type TabId = "details" | "images" | "amenities" | "activities" | "languages" |
   "certifications" | "dining" | "safety" | "insurance" | "rules" | "equipment" | "services";
 
-// ─── Feature Checkbox Panel ───────────────────────────────────────────────────
+// ─── Feature Panel with Multi-Select Dropdown ──────────────────────────────────
 
 interface FeaturePanelProps<C extends { id: string; name: string }, R extends { id: string }> {
   title: string; catalogItems: C[]; activeRecords: R[];
   getItemId: (r: R) => string;
-  onAdd: (itemId: string) => Promise<void>; onRemove: (recordId: string) => Promise<void>;
+  onAdd: (itemId: string) => Promise<void>; 
+  onAddBatch?: (itemIds: string[]) => Promise<void>;
+  onRemove: (recordId: string) => Promise<void>;
   savingId: string | null;
 }
 
 function FeaturePanel<C extends { id: string; name: string }, R extends { id: string }>({
-  title, catalogItems, activeRecords, getItemId, onAdd, onRemove, savingId,
+  title, catalogItems, activeRecords, getItemId, onAdd, onAddBatch, onRemove, savingId,
 }: FeaturePanelProps<C, R>) {
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [isSaving, setIsSaving] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
   const activeItemIds = new Set(activeRecords.map(getItemId));
   const activeMap = new Map(activeRecords.map((r) => [getItemId(r), r.id]));
-  if (catalogItems.length === 0) return (
-    <div className="text-center py-8 text-slate-400 text-sm">No {title.toLowerCase()} in the catalog yet.</div>
-  );
+  
+  // Get items that are not yet added
+  const availableItems = catalogItems.filter(item => !activeItemIds.has(item.id));
+  
+  // Get active items with their names
+  const activeItems = activeRecords.map(record => {
+    const itemId = getItemId(record);
+    const catalogItem = catalogItems.find(c => c.id === itemId);
+    return { record, itemId, name: catalogItem?.name || itemId };
+  });
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+        setSelectedItems(new Set());
+      }
+    };
+    if (showDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showDropdown]);
+
+  const handleToggleSelection = (itemId: string) => {
+    setSelectedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  };
+
+  const handleSave = async () => {
+    if (selectedItems.size === 0) {
+      setShowDropdown(false);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (onAddBatch && selectedItems.size > 1) {
+        // Batch add if available
+        await onAddBatch(Array.from(selectedItems));
+      } else {
+        // Add one by one
+        for (const itemId of selectedItems) {
+          await onAdd(itemId);
+        }
+      }
+      setSelectedItems(new Set());
+      setShowDropdown(false);
+    } catch (error) {
+      console.error("Failed to add items:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (catalogItems.length === 0) {
+    return (
+      <div className="text-center py-8 text-slate-400 text-xs">No {title.toLowerCase()} in the catalog yet.</div>
+    );
+  }
+
   return (
-    <div>
-      <p className="text-sm text-slate-500 mb-4">Select which {title.toLowerCase()} apply to this listing.</p>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-        {catalogItems.map((item) => {
-          const isActive = activeItemIds.has(item.id);
-          const recordId = activeMap.get(item.id);
-          const isSaving = savingId === item.id;
-          return (
-            <label key={item.id}
-              className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isActive ? "border-teal-400 bg-teal-50" : "border-slate-200 hover:border-slate-300 bg-white"} ${isSaving ? "opacity-60 pointer-events-none" : ""}`}>
-              <input type="checkbox" checked={isActive}
-                onChange={async () => { if (isActive && recordId) await onRemove(recordId); else await onAdd(item.id); }}
-                className="w-4 h-4 rounded accent-teal-600 shrink-0" />
-              <span className={`text-sm font-medium ${isActive ? "text-teal-800" : "text-slate-700"}`}>{item.name}</span>
-              {isSaving && <span className="ml-auto w-3 h-3 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />}
-            </label>
-          );
-        })}
-      </div>
+    <div className="space-y-4 relative">
+      {/* Existing Items */}
+      {activeItems.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {activeItems.map(({ record, itemId, name }) => {
+            const isRemoving = savingId === itemId;
+            return (
+              <div
+                key={record.id}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-teal-50 border border-teal-200 rounded-lg text-xs font-medium text-teal-700"
+              >
+                <span>{name}</span>
+                <button
+                  onClick={() => onRemove(record.id)}
+                  disabled={isRemoving}
+                  className="text-teal-600 hover:text-teal-700 disabled:opacity-50"
+                >
+                  {isRemoving ? (
+                    <span className="w-3 h-3 border-2 border-teal-500 border-t-transparent rounded-full animate-spin inline-block" />
+                  ) : (
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-xs text-slate-400">No {title.toLowerCase()} added yet.</p>
+      )}
+
+      {/* Add Button with Multi-Select Dropdown */}
+      {availableItems.length > 0 && (
+        <div className="relative inline-block" ref={dropdownRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setShowDropdown(!showDropdown);
+              if (showDropdown) {
+                setSelectedItems(new Set());
+              }
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium text-white bg-teal-600 border border-teal-600 rounded-lg hover:bg-teal-700 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add {title.slice(0, -1)}
+            {showDropdown && (
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
+            )}
+          </button>
+
+          {showDropdown && (
+            <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-xl z-[9999] max-h-80 overflow-y-auto">
+              <div className="p-2">
+                <div className="max-h-60 overflow-y-auto mb-2">
+                  {availableItems.map((item) => {
+                    const isSelected = selectedItems.has(item.id);
+                    return (
+                      <label
+                        key={item.id}
+                        className="flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 rounded cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelection(item.id)}
+                          className="w-4 h-4 rounded accent-teal-600 cursor-pointer"
+                        />
+                        <span className="flex-1">{item.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200">
+                  <span className="text-xs text-slate-500">
+                    {selectedItems.size > 0 ? `${selectedItems.size} selected` : "Select items"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={selectedItems.size === 0 || isSaving}
+                    className="px-4 py-1.5 text-xs font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSaving ? "Saving..." : "Save"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {availableItems.length === 0 && activeItems.length > 0 && (
+        <p className="text-xs text-slate-400">All available {title.toLowerCase()} have been added.</p>
+      )}
     </div>
   );
 }
@@ -318,6 +472,7 @@ export default function ListingManagePage() {
   const makeFeatureHandlers = <C extends { id: string; name: string }, R extends { id: string }>(
     featureKey: keyof typeof activeFeatures,
     addFn: (data: Record<string, unknown>) => Promise<R>,
+    addBatchFn: ((items: Record<string, unknown>[]) => Promise<R[]>) | undefined,
     buildPayload: (itemId: string) => Record<string, unknown>,
     getItemId: (r: R) => string,
   ) => ({
@@ -329,6 +484,17 @@ export default function ListingManagePage() {
         setActiveFeatures((prev) => ({ ...prev, [featureKey]: [...(prev[featureKey] as unknown as R[]), record as unknown as R] }));
       } finally { setSavingId(null); }
     },
+    onAddBatch: addBatchFn ? async (itemIds: string[]) => {
+      if (!listing || itemIds.length === 0) return;
+      try {
+        const payloads = itemIds.map(buildPayload);
+        const records = await addBatchFn(payloads);
+        setActiveFeatures((prev) => ({ ...prev, [featureKey]: [...(prev[featureKey] as unknown as R[]), ...records as unknown as R[]] }));
+      } catch (error) {
+        console.error("Batch add failed:", error);
+        throw error;
+      }
+    } : undefined,
     onRemove: async (recordId: string) => {
       const records = activeFeatures[featureKey] as unknown as R[];
       const rec = records.find((r) => r.id === recordId);
@@ -395,7 +561,7 @@ export default function ListingManagePage() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200">
         <div className="flex overflow-x-auto border-b border-slate-100">
           {tabs.map(({ id: tabId, label, count }) => (
             <button 
@@ -421,7 +587,7 @@ export default function ListingManagePage() {
           ))}
         </div>
 
-        <div className="p-6">
+        <div className="p-6 relative overflow-visible">
           {/* Details Tab */}
           {activeTab === "details" && (
             <form onSubmit={saveDetails} className="space-y-5">
@@ -560,52 +726,52 @@ export default function ListingManagePage() {
               <FeaturePanel title="Amenities" catalogItems={catalog.amenities} activeRecords={activeFeatures.amenities}
                 getItemId={(r) => r.amenity_id}
                 savingId={savingId}
-                {...makeFeatureHandlers("amenities", listingFeaturesApi.amenities.add, (id) => ({ listing_id: listing.id, amenity_id: id }), (r) => r.amenity_id)} />
+                {...makeFeatureHandlers("amenities", listingFeaturesApi.amenities.add, listingFeaturesApi.amenities.addBatch, (id) => ({ listing_id: listing.id, amenity_id: id }), (r) => r.amenity_id)} />
             )}
             {activeTab === "activities" && (
               <FeaturePanel title="Activities" catalogItems={catalog.activities} activeRecords={activeFeatures.activities}
                 getItemId={(r) => r.activity_id} savingId={savingId}
-                {...makeFeatureHandlers("activities", listingFeaturesApi.activities.add, (id) => ({ listing_id: listing.id, activity_id: id }), (r) => r.activity_id)} />
+                {...makeFeatureHandlers("activities", listingFeaturesApi.activities.add, listingFeaturesApi.activities.addBatch, (id) => ({ listing_id: listing.id, activity_id: id }), (r) => r.activity_id)} />
             )}
             {activeTab === "languages" && (
               <FeaturePanel title="Languages" catalogItems={catalog.languages} activeRecords={activeFeatures.languages}
                 getItemId={(r) => r.language_id} savingId={savingId}
-                {...makeFeatureHandlers("languages", listingFeaturesApi.languages.add, (id) => ({ listing_id: listing.id, language_id: id }), (r) => r.language_id)} />
+                {...makeFeatureHandlers("languages", listingFeaturesApi.languages.add, listingFeaturesApi.languages.addBatch, (id) => ({ listing_id: listing.id, language_id: id }), (r) => r.language_id)} />
             )}
             {activeTab === "certifications" && (
               <FeaturePanel title="Certifications" catalogItems={catalog.certifications} activeRecords={activeFeatures.certifications}
                 getItemId={(r) => r.certification_id} savingId={savingId}
-                {...makeFeatureHandlers("certifications", listingFeaturesApi.certifications.add, (id) => ({ listing_id: listing.id, certification_id: id }), (r) => r.certification_id)} />
+                {...makeFeatureHandlers("certifications", listingFeaturesApi.certifications.add, listingFeaturesApi.certifications.addBatch, (id) => ({ listing_id: listing.id, certification_id: id }), (r) => r.certification_id)} />
             )}
             {activeTab === "dining" && (
               <FeaturePanel title="Dining Options" catalogItems={catalog.diningOptions} activeRecords={activeFeatures.diningOptions}
                 getItemId={(r) => r.dining_option_id} savingId={savingId}
-                {...makeFeatureHandlers("diningOptions", listingFeaturesApi.diningOptions.add, (id) => ({ listing_id: listing.id, dining_option_id: id }), (r) => r.dining_option_id)} />
+                {...makeFeatureHandlers("diningOptions", listingFeaturesApi.diningOptions.add, listingFeaturesApi.diningOptions.addBatch, (id) => ({ listing_id: listing.id, dining_option_id: id }), (r) => r.dining_option_id)} />
             )}
             {activeTab === "safety" && (
               <FeaturePanel title="Safety Features" catalogItems={catalog.safetyFeatures} activeRecords={activeFeatures.safetyFeatures}
                 getItemId={(r) => r.safety_feature_id} savingId={savingId}
-                {...makeFeatureHandlers("safetyFeatures", listingFeaturesApi.safetyFeatures.add, (id) => ({ listing_id: listing.id, safety_feature_id: id }), (r) => r.safety_feature_id)} />
+                {...makeFeatureHandlers("safetyFeatures", listingFeaturesApi.safetyFeatures.add, listingFeaturesApi.safetyFeatures.addBatch, (id) => ({ listing_id: listing.id, safety_feature_id: id }), (r) => r.safety_feature_id)} />
             )}
             {activeTab === "insurance" && (
               <FeaturePanel title="Insurance Options" catalogItems={catalog.insuranceOptions} activeRecords={activeFeatures.insuranceOptions}
                 getItemId={(r) => r.insurance_option_id} savingId={savingId}
-                {...makeFeatureHandlers("insuranceOptions", listingFeaturesApi.insuranceOptions.add, (id) => ({ listing_id: listing.id, insurance_option_id: id }), (r) => r.insurance_option_id)} />
+                {...makeFeatureHandlers("insuranceOptions", listingFeaturesApi.insuranceOptions.add, listingFeaturesApi.insuranceOptions.addBatch, (id) => ({ listing_id: listing.id, insurance_option_id: id }), (r) => r.insurance_option_id)} />
             )}
             {activeTab === "rules" && (
               <FeaturePanel title="House Rules" catalogItems={catalog.houseRules} activeRecords={activeFeatures.houseRules}
                 getItemId={(r) => r.house_rule_id} savingId={savingId}
-                {...makeFeatureHandlers("houseRules", listingFeaturesApi.houseRules.add, (id) => ({ listing_id: listing.id, house_rule_id: id }), (r) => r.house_rule_id)} />
+                {...makeFeatureHandlers("houseRules", listingFeaturesApi.houseRules.add, listingFeaturesApi.houseRules.addBatch, (id) => ({ listing_id: listing.id, house_rule_id: id }), (r) => r.house_rule_id)} />
             )}
             {activeTab === "equipment" && (
               <FeaturePanel title="Equipment" catalogItems={catalog.equipment} activeRecords={activeFeatures.equipment}
                 getItemId={(r) => r.equipment_id} savingId={savingId}
-                {...makeFeatureHandlers("equipment", listingFeaturesApi.equipment.add, (id) => ({ listing_id: listing.id, equipment_id: id }), (r) => r.equipment_id)} />
+                {...makeFeatureHandlers("equipment", listingFeaturesApi.equipment.add, listingFeaturesApi.equipment.addBatch, (id) => ({ listing_id: listing.id, equipment_id: id }), (r) => r.equipment_id)} />
             )}
             {activeTab === "services" && (
               <FeaturePanel title="Treatment Services" catalogItems={catalog.services} activeRecords={activeFeatures.services}
                 getItemId={(r) => r.treatment_service_id} savingId={savingId}
-                {...makeFeatureHandlers("services", listingFeaturesApi.services.add, (id) => ({ listing_id: listing.id, treatment_service_id: id }), (r) => r.treatment_service_id)} />
+                {...makeFeatureHandlers("services", listingFeaturesApi.services.add, listingFeaturesApi.services.addBatch, (id) => ({ listing_id: listing.id, treatment_service_id: id }), (r) => r.treatment_service_id)} />
             )}
           </div>
         </div>
