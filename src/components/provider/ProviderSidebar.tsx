@@ -99,6 +99,7 @@ export function ProviderSidebar({ activeNav, onNavChange, isOpen, onClose, isCol
           fixed lg:static inset-y-0 left-0 z-50
           bg-[#1a2035] text-white flex flex-col
           transform transition-all duration-300 ease-in-out
+          h-screen lg:h-full
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           ${isCollapsed ? "w-16 lg:w-16" : "w-64 sm:w-56 lg:w-56"}
         `}

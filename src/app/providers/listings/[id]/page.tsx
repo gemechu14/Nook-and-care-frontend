@@ -357,36 +357,31 @@ export default function ListingManagePage() {
   ];
 
   if (pageLoading) return (
-    <div className="min-h-screen bg-slate-50 pt-16 flex items-center justify-center">
+    <div className="flex items-center justify-center min-h-[400px]">
       <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
   if (!listing) return (
-    <div className="min-h-screen bg-slate-50 pt-16 flex flex-col items-center justify-center gap-4 p-8 text-center">
+    <div className="flex flex-col items-center justify-center gap-4 p-8 text-center min-h-[400px]">
       <p className="text-slate-600 font-medium">{fetchError ?? "Listing not found or you don't have permission to view it."}</p>
-      <Link href="/providers/dashboard" className="text-teal-600 hover:text-teal-700 text-sm font-medium transition-colors">← Back to dashboard</Link>
+      <Link href="/providers/dashboard?nav=listings" className="text-teal-600 hover:text-teal-700 text-sm font-medium transition-colors">← Back to listings</Link>
     </div>
   );
 
   const CARE_TYPES: ApiCareType[] = ["ASSISTED_LIVING", "MEMORY_CARE", "INDEPENDENT_LIVING", "ADULT_FAMILY_HOME", "SKILLED_NURSING"];
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-16">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-slate-500 mb-6">
-          <Link href="/providers/dashboard" className="hover:text-teal-600 transition-colors">Provider Dashboard</Link>
-          <span>/</span>
-          <span className="text-slate-900 font-medium truncate max-w-xs">{listing.title}</span>
-        </div>
-
+    <div className="space-y-6">
+      <div>
         {/* Header */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-xl border border-slate-200 p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h1 className="text-xl font-bold text-slate-900">{listing.title}</h1>
-              <p className="text-sm text-slate-500 mt-1">{CARE_TYPE_LABELS[listing.care_type]} · {[listing.city, listing.state].filter(Boolean).join(", ")}</p>
+              <h1 className="text-2xl font-bold text-slate-900">{listing.title}</h1>
+              <p className="text-sm text-slate-500 mt-1">
+                {CARE_TYPE_LABELS[listing.care_type]} · {[listing.city, listing.state].filter(Boolean).join(", ")}
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
@@ -394,103 +389,164 @@ export default function ListingManagePage() {
                 listing.status === "PENDING" ? "bg-amber-100 text-amber-700" :
                 "bg-slate-100 text-slate-600"
               }`}>{listing.status}</span>
-              {listing.status === "PENDING" && (
-                <span className="text-xs text-amber-600">Awaiting admin approval</span>
-              )}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Tabs */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="flex overflow-x-auto border-b border-slate-100">
-            {tabs.map(({ id: tabId, label, count }) => (
-              <button key={tabId} onClick={() => setActiveTab(tabId)}
-                className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === tabId ? "border-teal-600 text-teal-600" : "border-transparent text-slate-500 hover:text-slate-700"
+      {/* Tabs */}
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="flex overflow-x-auto border-b border-slate-100">
+          {tabs.map(({ id: tabId, label, count }) => (
+            <button 
+              key={tabId} 
+              onClick={() => setActiveTab(tabId)}
+              className={`flex items-center gap-1.5 px-4 sm:px-6 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tabId 
+                  ? "border-teal-600 text-teal-600 bg-teal-50/50" 
+                  : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              {label}
+              {count !== undefined && count > 0 && (
+                <span className={`text-xs rounded-full px-1.5 py-0.5 font-semibold ${
+                  activeTab === tabId 
+                    ? "bg-teal-600 text-white" 
+                    : "bg-slate-200 text-slate-600"
                 }`}>
-                {label}
-                {count !== undefined && count > 0 && (
-                  <span className={`text-xs rounded-full px-1.5 py-0.5 ${activeTab === tabId ? "bg-teal-100 text-teal-700" : "bg-slate-100 text-slate-500"}`}>{count}</span>
-                )}
-              </button>
-            ))}
-          </div>
+                  {count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
 
-          <div className="p-6">
-            {/* ── Details ── */}
-            {activeTab === "details" && (
-              <form onSubmit={saveDetails} className="space-y-4 max-w-2xl">
-                {detailsSuccess && <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm">Changes saved successfully!</div>}
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Title</label>
-                    <input value={detailsForm.title ?? ""} onChange={(e) => setDetailsForm((p) => ({ ...p, title: e.target.value }))}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Care Type</label>
-                    <select value={detailsForm.care_type ?? ""} onChange={(e) => setDetailsForm((p) => ({ ...p, care_type: e.target.value as ApiCareType }))}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none bg-white">
-                      {CARE_TYPES.map((ct) => <option key={ct} value={ct}>{CARE_TYPE_LABELS[ct]}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Price ($/mo)</label>
-                    <input type="number" value={detailsForm.price ?? ""} onChange={(e) => setDetailsForm((p) => ({ ...p, price: Number(e.target.value) || undefined }))}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">City</label>
-                    <input value={detailsForm.city ?? ""} onChange={(e) => setDetailsForm((p) => ({ ...p, city: e.target.value }))}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">State</label>
-                    <input value={detailsForm.state ?? ""} onChange={(e) => setDetailsForm((p) => ({ ...p, state: e.target.value }))}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none" />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Address</label>
-                    <input value={detailsForm.address ?? ""} onChange={(e) => setDetailsForm((p) => ({ ...p, address: e.target.value }))}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Phone</label>
-                    <input value={detailsForm.phone ?? ""} onChange={(e) => setDetailsForm((p) => ({ ...p, phone: e.target.value }))}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
-                    <input type="email" value={detailsForm.email ?? ""} onChange={(e) => setDetailsForm((p) => ({ ...p, email: e.target.value }))}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Capacity</label>
-                    <input type="number" value={detailsForm.capacity ?? ""} onChange={(e) => setDetailsForm((p) => ({ ...p, capacity: Number(e.target.value) || undefined }))}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">License Number</label>
-                    <input value={detailsForm.license_number ?? ""} onChange={(e) => setDetailsForm((p) => ({ ...p, license_number: e.target.value }))}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none" />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Description</label>
-                    <textarea value={detailsForm.description ?? ""} onChange={(e) => setDetailsForm((p) => ({ ...p, description: e.target.value }))}
-                      rows={4} className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none resize-none" />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <input type="checkbox" id="has24" checked={!!detailsForm.has_24_hour_care}
-                      onChange={(e) => setDetailsForm((p) => ({ ...p, has_24_hour_care: e.target.checked }))}
-                      className="w-4 h-4 accent-teal-600 rounded" />
-                    <label htmlFor="has24" className="text-sm font-medium text-slate-700">24-Hour Care Available</label>
-                  </div>
+        <div className="p-6">
+          {/* Details Tab */}
+          {activeTab === "details" && (
+            <form onSubmit={saveDetails} className="space-y-6">
+              {detailsSuccess && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm font-medium">
+                  Changes saved successfully!
                 </div>
-                <button type="submit" disabled={detailsSaving}
-                  className="bg-teal-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-teal-700 transition-colors disabled:opacity-60">
+              )}
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">Title</label>
+                  <input 
+                    value={detailsForm.title ?? ""} 
+                    onChange={(e) => setDetailsForm((p) => ({ ...p, title: e.target.value }))}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">Care Type</label>
+                  <select 
+                    value={detailsForm.care_type ?? ""} 
+                    onChange={(e) => setDetailsForm((p) => ({ ...p, care_type: e.target.value as ApiCareType }))}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none bg-white transition-colors"
+                  >
+                    {CARE_TYPES.map((ct) => <option key={ct} value={ct}>{CARE_TYPE_LABELS[ct]}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">Price ($/mo)</label>
+                  <input 
+                    type="number" 
+                    value={detailsForm.price ?? ""} 
+                    onChange={(e) => setDetailsForm((p) => ({ ...p, price: Number(e.target.value) || undefined }))}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">City</label>
+                  <input 
+                    value={detailsForm.city ?? ""} 
+                    onChange={(e) => setDetailsForm((p) => ({ ...p, city: e.target.value }))}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">State</label>
+                  <input 
+                    value={detailsForm.state ?? ""} 
+                    onChange={(e) => setDetailsForm((p) => ({ ...p, state: e.target.value }))}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">Address</label>
+                  <input 
+                    value={detailsForm.address ?? ""} 
+                    onChange={(e) => setDetailsForm((p) => ({ ...p, address: e.target.value }))}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">Phone</label>
+                  <input 
+                    value={detailsForm.phone ?? ""} 
+                    onChange={(e) => setDetailsForm((p) => ({ ...p, phone: e.target.value }))}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">Email</label>
+                  <input 
+                    type="email" 
+                    value={detailsForm.email ?? ""} 
+                    onChange={(e) => setDetailsForm((p) => ({ ...p, email: e.target.value }))}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">Capacity</label>
+                  <input 
+                    type="number" 
+                    value={detailsForm.capacity ?? ""} 
+                    onChange={(e) => setDetailsForm((p) => ({ ...p, capacity: Number(e.target.value) || undefined }))}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">License Number</label>
+                  <input 
+                    value={detailsForm.license_number ?? ""} 
+                    onChange={(e) => setDetailsForm((p) => ({ ...p, license_number: e.target.value }))}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">Description</label>
+                  <textarea 
+                    value={detailsForm.description ?? ""} 
+                    onChange={(e) => setDetailsForm((p) => ({ ...p, description: e.target.value }))}
+                    rows={4} 
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none resize-none transition-colors" 
+                  />
+                </div>
+                <div className="sm:col-span-2 flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                  <input 
+                    type="checkbox" 
+                    id="has24" 
+                    checked={!!detailsForm.has_24_hour_care}
+                    onChange={(e) => setDetailsForm((p) => ({ ...p, has_24_hour_care: e.target.checked }))}
+                    className="w-5 h-5 accent-teal-600 rounded cursor-pointer" 
+                  />
+                  <label htmlFor="has24" className="text-sm font-medium text-slate-700 cursor-pointer">
+                    24-Hour Care Available
+                  </label>
+                </div>
+              </div>
+              <div className="flex justify-end pt-4 border-t border-slate-200">
+                <button 
+                  type="submit" 
+                  disabled={detailsSaving}
+                  className="bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed min-w-[140px]"
+                >
                   {detailsSaving ? "Saving…" : "Save Changes"}
                 </button>
+              </div>
               </form>
             )}
 
@@ -553,7 +609,6 @@ export default function ListingManagePage() {
             )}
           </div>
         </div>
-      </div>
     </div>
   );
 }

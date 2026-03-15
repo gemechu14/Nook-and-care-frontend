@@ -66,7 +66,7 @@ export default function ProviderLayout({ children }: { children: React.ReactNode
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
       <ProviderSidebar
         activeNav={activeNav}
         onNavChange={handleNavChange}
@@ -75,13 +75,13 @@ export default function ProviderLayout({ children }: { children: React.ReactNode
         isCollapsed={isCollapsed}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <ProviderHeader 
           onMenuClick={() => setSidebarOpen(!sidebarOpen)} 
           onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
           isCollapsed={isCollapsed}
         />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           {children}
         </main>
       </div>
