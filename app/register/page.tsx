@@ -14,7 +14,6 @@ export default function RegisterPage() {
     confirmPassword: "",
     full_name: "",
     phone: "",
-    role: "FAMILY" as "FAMILY" | "SENIOR" | "PROVIDER",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -51,12 +50,13 @@ export default function RegisterPage() {
 
     setRegistering(true);
     try {
+      // Always register as FAMILY
       await register({
         email: form.email,
         password: form.password,
         full_name: form.full_name,
         phone: form.phone || undefined,
-        role: form.role,
+        role: "FAMILY",
       });
       // Redirect will happen via useEffect above
     } catch (err) {
@@ -161,23 +161,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Role Field */}
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-slate-700 mb-2">
-                I am a
-              </label>
-              <select
-                id="role"
-                value={form.role}
-                onChange={(e) => setForm((p) => ({ ...p, role: e.target.value as typeof form.role }))}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-slate-50"
-              >
-                <option value="FAMILY">Family Member</option>
-                <option value="SENIOR">Senior</option>
-                <option value="PROVIDER">Facility Provider</option>
-              </select>
-            </div>
-
             {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
@@ -279,4 +262,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-

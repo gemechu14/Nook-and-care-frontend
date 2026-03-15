@@ -14,31 +14,82 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      // Redirect based on role
-      if (user.role === "ADMIN") router.push("/admin");
-      else if (user.role === "PROVIDER") router.push("/providers/dashboard");
-      else router.push("/dashboard");
+      // Small delay to ensure state is updated
+      const timer = setTimeout(() => {
+        // Redirect based on role
+        if (user.role === "ADMIN") {
+          router.push("/admin");
+        } else if (user.role === "PROVIDER") {
+          router.push("/providers/dashboard");
+        } else {
+          router.push("/dashboard");
+        }
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("✅ Form submitted with:", { email: form.email, passwordLength: form.password.length });
+    
+    // Basic validation
+    if (!form.email.trim()) {
+      setError("Please enter your email address.");
+      return;
+    }
+    if (!form.password.trim()) {
+      setError("Please enter your password.");
+      return;
+    }
+    
     setError(null);
     setLoggingIn(true);
+    
     try {
-      await login(form.email, form.password);
-      // Redirect will happen via useEffect above
+      console.log("🚀 Calling login function...");
+      await login(form.email.trim(), form.password);
+      console.log("✅ Login successful, user state should update");
+      // Don't set loggingIn to false here - let useEffect handle redirect
+      // The user state will update and trigger redirect
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid email or password.");
-    } finally {
+      console.error("Login error caught:", err);
       setLoggingIn(false);
+      // Extract error message safely
+      let errorMessage = "Invalid email or password. Please try again.";
+      
+      if (err instanceof Error) {
+        errorMessage = err.message || errorMessage;
+      } else if (typeof err === "string") {
+        errorMessage = err;
+      } else if (err && typeof err === "object") {
+        // Fallback for any other error format
+        const errObj = err as any;
+        errorMessage = errObj.message || errObj.detail || errObj.error || errorMessage;
+      }
+      
+      setError(errorMessage);
+      console.error("Login error details:", err);
     }
   };
 
-  if (loading) {
+  // Show loading only on initial auth check, not when user is already logged in
+  if (loading && !user) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // If user is already logged in, show a brief message before redirect
+  if (user && !loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-600">Redirecting...</p>
+        </div>
       </div>
     );
   }

@@ -33,7 +33,21 @@ async function request<T>(
     let detail = `HTTP ${res.status}`;
     try {
       const body = await res.json();
-      detail = body?.detail ?? JSON.stringify(body);
+      console.log(`❌ API Error ${res.status}:`, body);
+      
+      // Handle FastAPI validation errors (422)
+      if (Array.isArray(body?.detail)) {
+        const validationErrors = body.detail.map((err: any) => 
+          `${err.loc?.slice(1).join('.') || 'field'}: ${err.msg}`
+        ).join('; ');
+        detail = `Validation error: ${validationErrors}`;
+      } else if (body?.detail) {
+        detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail);
+      } else if (body?.message) {
+        detail = body.message;
+      } else {
+        detail = JSON.stringify(body);
+      }
     } catch {
       /* ignore */
     }

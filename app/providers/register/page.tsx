@@ -11,6 +11,7 @@ export default function ProviderRegisterPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [form, setForm] = useState<CreateProviderRequest>({
+    user_id: "", // Will be set from user.id
     business_name: "", business_type: "Senior Housing", tax_id: "",
     address: "", city: "", country: "USA",
   });
@@ -20,16 +21,69 @@ export default function ProviderRegisterPage() {
   useEffect(() => {
     if (!loading && !user) router.push("/login");
     if (!loading && user && user.role !== "PROVIDER") router.push("/");
+    if (user) {
+      setForm((prev) => ({ ...prev, user_id: user.id }));
+    }
   }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true); setError(null);
+    
+    // Basic validation
+    if (!form.business_name.trim()) {
+      setError("Business name is required.");
+      setSaving(false);
+      return;
+    }
+    if (!form.address.trim()) {
+      setError("Business address is required.");
+      setSaving(false);
+      return;
+    }
+    if (!form.city.trim()) {
+      setError("City is required.");
+      setSaving(false);
+      return;
+    }
+    
+    if (!user) {
+      setError("You must be logged in to register as a provider.");
+      setSaving(false);
+      return;
+    }
+    
     try {
-      await providersApi.create(form);
+      console.log("📝 Submitting provider registration...");
+      // Always use current user.id, don't rely on form state
+      await providersApi.create({
+        ...form,
+        user_id: user.id,
+      });
+      console.log("✅ Provider registration successful");
       router.push("/providers/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to register provider profile.");
+      console.error("❌ Provider registration error:", err);
+      let errorMessage = "Failed to register provider profile.";
+      
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === "string") {
+        errorMessage = err;
+      } else if (err && typeof err === "object") {
+        const errObj = err as any;
+        // Handle FastAPI validation errors
+        if (Array.isArray(errObj.detail)) {
+          const validationErrors = errObj.detail.map((e: any) => 
+            `${e.loc?.slice(1).join('.') || 'field'}: ${e.msg}`
+          ).join('; ');
+          errorMessage = `Validation error: ${validationErrors}`;
+        } else {
+          errorMessage = errObj.message || errObj.detail || errorMessage;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setSaving(false);
     }

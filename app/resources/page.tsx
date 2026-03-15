@@ -196,7 +196,7 @@ export default function ResourcesPage() {
           {/* Guides & Articles */}
           <div className="mb-16">
             <h2 className="text-2xl font-bold text-slate-900 mb-8">Guides & Articles</h2>
-            <div className="grid sm:grid-cols-2 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {guidesArticles.map((article) => (
                 <Link
                   key={article.title}

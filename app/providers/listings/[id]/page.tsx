@@ -8,6 +8,7 @@ import { listingsApi } from "@/lib/api/listings";
 import { listingImagesApi } from "@/lib/api/listingImages";
 import { listingFeaturesApi } from "@/lib/api/listingFeatures";
 import { catalogApi } from "@/lib/api/catalog";
+import { providersApi } from "@/lib/api/providers";
 import type {
   ApiListing, ApiListingImage,
   Amenity, Activity, Language, Certification,
@@ -209,9 +210,22 @@ export default function ListingManagePage() {
     setImages(imgs);
   }, [id]);
 
-  const fetchAll = useCallback(async (listingId: string) => {
+  const fetchAll = useCallback(async (listingId: string, currentUser: typeof user) => {
     try {
+      setFetchError(null);
       const data = await listingsApi.getById(listingId);
+      
+      // Verify ownership for providers (admins can access any)
+      if (currentUser?.role === "PROVIDER") {
+        const providers = await providersApi.list({ limit: 100 }).catch(() => []);
+        const userProvider = providers.find((p) => p.user_id === currentUser.id);
+        if (!userProvider || data.provider_id !== userProvider.id) {
+          setFetchError("You don't have permission to manage this listing.");
+          setPageLoading(false);
+          return;
+        }
+      }
+      
       setListing(data);
       setDetailsForm({
         title: data.title, description: data.description ?? "",
@@ -288,7 +302,7 @@ export default function ListingManagePage() {
     if (loading) return;
     if (!user) { router.push("/login"); return; }
     if (user.role !== "PROVIDER" && user.role !== "ADMIN") { router.push("/"); return; }
-    if (id) fetchAll(id);
+    if (id) fetchAll(id, user);
   }, [user, loading, router, id, fetchAll]);
 
   const saveDetails = async (e: React.FormEvent) => {

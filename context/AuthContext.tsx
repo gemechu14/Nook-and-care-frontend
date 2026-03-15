@@ -38,15 +38,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { refreshUser(); }, [refreshUser]);
 
   const login = async (email: string, password: string) => {
-    const me = await authApi.login({ email, password });
-    setUser(me);
+    console.log("🔑 AuthContext.login called with email:", email);
+    try {
+      console.log("📞 Calling authApi.login...");
+      const me = await authApi.login({ email, password });
+      console.log("✅ Login successful, user:", me);
+      setUser(me);
+    } catch (error) {
+      console.error("❌ AuthContext login error:", error);
+      // Re-throw so the component can handle it
+      throw error;
+    }
   };
 
   const register = async (data: RegisterRequest) => {
-    const me = await authApi.register(data);
-    // Auto-login after register
-    await authApi.login({ email: data.email, password: data.password });
-    setUser(me);
+    try {
+      await authApi.register(data);
+      // Auto-login after register
+      const me = await authApi.login({ email: data.email, password: data.password });
+      setUser(me);
+    } catch (error) {
+      // Re-throw so the component can handle it
+      throw error;
+    }
   };
 
   const logout = async () => {

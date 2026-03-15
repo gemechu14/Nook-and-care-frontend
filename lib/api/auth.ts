@@ -11,19 +11,106 @@ export interface TokenResponse { access_token: string; refresh_token: string; to
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<ApiUser> => {
-    const res = await fetch(`${BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ username: data.email, password: data.password }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err?.detail ?? "Invalid credentials");
+    try {
+      console.log("🌐 BASE_URL:", BASE_URL);
+      const url = `${BASE_URL}/auth/login`;
+      console.log("🔐 Calling login API:", url);
+      console.log("📧 Email:", data.email);
+      
+      // Try form-urlencoded with username first (OAuth2 standard format)
+      let res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ username: data.email, password: data.password }),
+      });
+      
+      let lastErrorBody: any = null;
+      
+      // If that fails with 422, try JSON format
+      if (!res.ok && res.status === 422) {
+        console.log("⚠️ Form-urlencoded with username failed (422), trying JSON format...");
+        try {
+          lastErrorBody = await res.json();
+          console.log("422 Error details:", lastErrorBody);
+        } catch {}
+        
+        res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: data.email, password: data.password }),
+        });
+      }
+      
+      // If still 422, try form-urlencoded with email instead of username
+      if (!res.ok && res.status === 422) {
+        console.log("⚠️ JSON format failed (422), trying form-urlencoded with email...");
+        try {
+          lastErrorBody = await res.json();
+          console.log("422 Error details:", lastErrorBody);
+        } catch {}
+        
+        res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ email: data.email, password: data.password }),
+        });
+      }
+      
+      console.log("📡 Login API response status:", res.status, res.statusText);
+      
+      if (!res.ok) {
+        let errorMessage = "Invalid email or password";
+        try {
+          // Try to get error body from current response, or use lastErrorBody
+          let errBody = lastErrorBody;
+          if (!errBody) {
+            errBody = await res.json();
+          }
+          console.log("❌ Error response body:", errBody);
+          
+          // Handle different error response formats
+          if (Array.isArray(errBody?.detail)) {
+            // FastAPI validation errors come as array
+            const validationErrors = errBody.detail.map((err: any) => 
+              `${err.loc?.join('.')}: ${err.msg}`
+            ).join(', ');
+            errorMessage = `Validation error: ${validationErrors}`;
+          } else if (errBody?.detail) {
+            errorMessage = typeof errBody.detail === "string" 
+              ? errBody.detail 
+              : JSON.stringify(errBody.detail);
+          } else {
+            errorMessage = errBody?.message || errBody?.error || errorMessage;
+          }
+          
+          if (typeof errorMessage !== "string") {
+            errorMessage = JSON.stringify(errorMessage);
+          }
+        } catch (parseError) {
+          console.error("Failed to parse error response:", parseError);
+          // If JSON parsing fails, use default message
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const tokens: TokenResponse = await res.json();
+      tokenStorage.setAccess(tokens.access_token);
+      tokenStorage.setRefresh(tokens.refresh_token);
+      
+      // Get user profile
+      try {
+        return await api.get<ApiUser>("/auth/me");
+      } catch (meError) {
+        // If /auth/me fails, still consider login successful (tokens are saved)
+        throw new Error("Login successful but failed to load user profile. Please try again.");
+      }
+    } catch (error) {
+      // Re-throw Error instances as-is, wrap others
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unexpected error occurred during login");
     }
-    const tokens: TokenResponse = await res.json();
-    tokenStorage.setAccess(tokens.access_token);
-    tokenStorage.setRefresh(tokens.refresh_token);
-    return api.get<ApiUser>("/auth/me");
   },
 
   register: async (data: RegisterRequest): Promise<ApiUser> => {

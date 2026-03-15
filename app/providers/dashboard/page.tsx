@@ -7,7 +7,8 @@ import { useAuth } from "@/context/AuthContext";
 import { listingsApi } from "@/lib/api/listings";
 import { providersApi } from "@/lib/api/providers";
 import { listingImagesApi } from "@/lib/api/listingImages";
-import type { ApiListing, ApiProvider, ApiListingImage } from "@/types";
+import { toursApi } from "@/lib/api/tours";
+import type { ApiListing, ApiProvider, ApiListingImage, ApiTour } from "@/types";
 import { CARE_TYPE_LABELS } from "@/types";
 import type { CreateListingRequest } from "@/types";
 
@@ -394,22 +395,46 @@ export default function ProviderDashboard() {
 
   const [provider, setProvider] = useState<ApiProvider | null>(null);
   const [listings, setListings] = useState<ApiListing[]>([]);
+  const [tours, setTours] = useState<ApiTour[]>([]);
+  const [activeTab, setActiveTab] = useState<"listings" | "tours" | "subscriptions">("listings");
   const [pageLoading, setPageLoading] = useState(true);
   const [showNewListing, setShowNewListing] = useState(false);
   const [imageManagerListing, setImageManagerListing] = useState<ApiListing | null>(null);
 
   const loadData = useCallback(async () => {
+    if (!user) return;
     setPageLoading(true);
     try {
-      const [prov, listingData] = await Promise.allSettled([
-        providersApi.getMyProfile(),
+      const [provList, listingData, toursData] = await Promise.allSettled([
+        providersApi.list({ limit: 100 }),
         listingsApi.list(),
+        toursApi.list(),
       ]);
-      if (prov.status === "fulfilled") setProvider(prov.value);
-      if (listingData.status === "fulfilled") {
-        const uid = user?.id;
-        setListings(uid ? listingData.value.filter((l) => l.provider_id === prov.status === "fulfilled" ? prov.value.id : false) : []);
+      
+      // Find provider for current user
+      let userProvider: ApiProvider | null = null;
+      if (provList.status === "fulfilled") {
+        userProvider = provList.value.find((p) => p.user_id === user.id) || null;
+        if (userProvider) setProvider(userProvider);
       }
+      
+      // Filter listings for this provider
+      if (listingData.status === "fulfilled") {
+        if (userProvider) {
+          setListings(listingData.value.filter((l) => l.provider_id === userProvider!.id));
+        } else {
+          setListings([]);
+        }
+      }
+      
+      // Filter tours for this provider's listings
+      if (toursData.status === "fulfilled" && userProvider) {
+        const providerListingIds = listingData.status === "fulfilled" 
+          ? listingData.value.filter((l) => l.provider_id === userProvider!.id).map((l) => l.id)
+          : [];
+        setTours(toursData.value.filter((t) => providerListingIds.includes(t.listing_id)));
+      }
+      
     } finally {
       setPageLoading(false);
     }
@@ -420,6 +445,14 @@ export default function ProviderDashboard() {
     if (!user) { router.push("/login"); return; }
     if (user.role !== "PROVIDER") { router.push("/"); return; }
     loadData();
+    
+    // Check if we should open the add listing modal
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("addListing") === "true") {
+      setShowNewListing(true);
+      // Clean up URL
+      router.replace("/providers/dashboard", { scroll: false });
+    }
   }, [user, loading, router, loadData]);
 
   if (loading || pageLoading) return (
@@ -522,12 +555,43 @@ export default function ProviderDashboard() {
           ))}
         </div>
 
-        {/* Listings table */}
+        {/* Tabs */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-            <h2 className="font-semibold text-slate-900">Your Listings</h2>
-            <button onClick={loadData} className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors">Refresh</button>
+          <div className="flex items-center border-b border-slate-200">
+            {[
+              { id: "listings" as const, label: "Listings", count: listings.length },
+              { id: "tours" as const, label: "Tours", count: tours.length },
+              { id: "subscriptions" as const, label: "Subscriptions", count: 0 },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${
+                  activeTab === tab.id
+                    ? "border-teal-600 text-teal-600 bg-teal-50"
+                    : "border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                }`}
+              >
+                {tab.label}
+                {tab.count > 0 && (
+                  <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                    activeTab === tab.id ? "bg-teal-600 text-white" : "bg-slate-200 text-slate-600"
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === "listings" && (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-semibold text-slate-900">Your Listings</h2>
+                  <button onClick={loadData} className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors">Refresh</button>
+                </div>
 
           {listings.length === 0 ? (
             <div className="text-center py-16 text-slate-400">
@@ -599,6 +663,130 @@ export default function ProviderDashboard() {
               </table>
             </div>
           )}
+              </>
+            )}
+
+            {activeTab === "tours" && (
+              <div>
+                <h2 className="font-semibold text-slate-900 mb-4">Tour Requests</h2>
+                {tours.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400">
+                    <p className="text-lg mb-2">No tour requests yet</p>
+                    <p className="text-sm">Tour requests from families will appear here</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {tours.map((tour) => (
+                      <div key={tour.id} className="border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <p className="font-medium text-slate-900">{tour.family_name || "Family Member"}</p>
+                              <StatusBadge status={tour.status} />
+                            </div>
+                            <p className="text-sm text-slate-600 mb-1">
+                              Requested for: {new Date(tour.preferred_date).toLocaleDateString()}
+                            </p>
+                            {tour.family_email && (
+                              <p className="text-sm text-slate-500">{tour.family_email}</p>
+                            )}
+                            {tour.family_phone && (
+                              <p className="text-sm text-slate-500">{tour.family_phone}</p>
+                            )}
+                            {tour.notes && (
+                              <p className="text-sm text-slate-600 mt-2 italic">&quot;{tour.notes}&quot;</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {tour.status === "PENDING" && (
+                              <>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await toursApi.approve(tour.id);
+                                      loadData();
+                                    } catch (err) {
+                                      alert(err instanceof Error ? err.message : "Failed to approve tour");
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await toursApi.cancel(tour.id);
+                                      loadData();
+                                    } catch (err) {
+                                      alert(err instanceof Error ? err.message : "Failed to cancel tour");
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 bg-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-300 transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            )}
+                            {tour.status === "APPROVED" && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await toursApi.complete(tour.id);
+                                    loadData();
+                                  } catch (err) {
+                                    alert(err instanceof Error ? err.message : "Failed to complete tour");
+                                  }
+                                }}
+                                className="px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                              >
+                                Mark Complete
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "subscriptions" && (
+              <div>
+                <h2 className="font-semibold text-slate-900 mb-4">Subscription Plan</h2>
+                <div className="text-center py-12 text-slate-400">
+                  <p className="text-lg mb-2">No active subscription</p>
+                  <p className="text-sm mb-6">Subscribe to a plan to unlock more features</p>
+                  <div className="grid md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                    {[
+                      { name: "FREE", price: "$0", features: ["Up to 3 listings", "Basic support"] },
+                      { name: "PRO", price: "$99/mo", features: ["Unlimited listings", "Priority support", "Analytics"] },
+                      { name: "PREMIUM", price: "$199/mo", features: ["Unlimited listings", "Featured placement", "Priority support", "Advanced analytics"] },
+                    ].map((plan) => (
+                      <div key={plan.name} className="border border-slate-200 rounded-xl p-6">
+                        <h3 className="font-bold text-slate-900 mb-1">{plan.name}</h3>
+                        <p className="text-2xl font-bold text-teal-600 mb-4">{plan.price}</p>
+                        <ul className="space-y-2 text-sm text-slate-600 mb-4">
+                          {plan.features.map((f, i) => (
+                            <li key={i} className="flex items-center gap-2">
+                              <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                        <button className="w-full bg-teal-600 text-white py-2 rounded-lg font-medium hover:bg-teal-700 transition-colors">
+                          Subscribe
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
