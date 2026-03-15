@@ -1,30 +1,58 @@
-# Backend APIs Required for Batch Feature Management
+# Listing Features Batch Operations API
 
-This document lists all the backend API endpoints that need to be implemented to support the multi-select batch feature management functionality in the provider listing management page.
+Complete API documentation for batch create and delete operations on listing features (amenities, activities, languages, certifications, dining options, safety features, insurance options, house rules, equipment, and services).
 
-## Overview
-
-The frontend now supports selecting multiple items (amenities, activities, languages, etc.) at once and saving them in a single batch operation. This requires new batch endpoints for each feature type.
+**Base Path:** `/api/v1`
 
 ---
 
-## Batch Add Endpoints
+## Overview
+
+These endpoints allow providers to manage multiple listing feature associations in a single request, significantly improving performance and user experience when managing listings with many features.
+
+### Key Features
+
+- **Batch Operations**: Create or delete multiple associations in one request
+- **Transaction Safety**: All-or-nothing behavior - if any item fails, the entire batch is rolled back
+- **Validation**: Comprehensive validation before any database operations
+- **Authorization**: Only listing owners (providers) or admins can manage features
+- **Duplicate Prevention**: Automatically prevents duplicate associations
+
+---
+
+## Authentication
+
+All endpoints require Bearer token authentication:
+
+```
+Authorization: Bearer <your_access_token>
+```
+
+**Required Role:** `PROVIDER` (must own the listing) or `ADMIN`
+
+---
+
+## Common Request Format
 
 All batch endpoints follow the same pattern:
-- **Method:** `POST`
-- **Path:** `/{resource}/batch`
-- **Authentication:** Required (Bearer token, Provider role)
-- **Request Body:** JSON object with `items` array
 
-### Request Format
-
+### Batch Create
 ```json
 {
   "items": [
     {
       "listing_id": "uuid",
-      "{feature}_id": "uuid"
-    },
+      "{feature}_id": "uuid",
+      // ... additional fields for specific feature types
+    }
+  ]
+}
+```
+
+### Batch Delete
+```json
+{
+  "items": [
     {
       "listing_id": "uuid",
       "{feature}_id": "uuid"
@@ -33,7 +61,18 @@ All batch endpoints follow the same pattern:
 }
 ```
 
-### Response Format
+### Validation Rules
+
+1. **Same Listing**: All items in a batch must reference the same `listing_id`
+2. **Valid IDs**: All feature IDs must exist in the catalog
+3. **No Duplicates**: Cannot create associations that already exist
+4. **Ownership**: User must own the listing (or be admin)
+
+---
+
+## Common Response Format
+
+All endpoints return an array of created/deleted associations:
 
 ```json
 [
@@ -42,19 +81,60 @@ All batch endpoints follow the same pattern:
     "listing_id": "uuid",
     "{feature}_id": "uuid",
     "created_at": "2024-01-01T00:00:00Z"
-  },
-  {
-    "id": "uuid",
-    "listing_id": "uuid",
-    "{feature}_id": "uuid",
-    "created_at": "2024-01-01T00:00:00Z"
+    // ... additional fields for specific feature types
   }
 ]
 ```
 
 ---
 
-## 1. Listing Amenities Batch Add
+## Error Responses
+
+### 400 Bad Request
+```json
+{
+  "detail": "All items must reference the same listing"
+}
+```
+
+```json
+{
+  "detail": "Some amenities already associated: {amenity_ids}"
+}
+```
+
+### 401 Unauthorized
+```json
+{
+  "detail": "Not authenticated"
+}
+```
+
+### 403 Forbidden
+```json
+{
+  "detail": "You do not have permission to manage this listing"
+}
+```
+
+### 404 Not Found
+```json
+{
+  "detail": "Listing not found"
+}
+```
+
+```json
+{
+  "detail": "Amenity {amenity_id} not found"
+}
+```
+
+---
+
+## 1. Listing Amenities
+
+### Batch Create Amenities
 
 **Endpoint:** `POST /api/v1/listing-amenities/batch`
 
@@ -75,16 +155,56 @@ All batch endpoints follow the same pattern:
 ```
 
 **Response:** `201 Created`
-- Returns array of `ListingAmenityRecord` objects
+```json
+[
+  {
+    "id": "423e4567-e89b-12d3-a456-426614174003",
+    "listing_id": "123e4567-e89b-12d3-a456-426614174000",
+    "amenity_id": "223e4567-e89b-12d3-a456-426614174001",
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "523e4567-e89b-12d3-a456-426614174004",
+    "listing_id": "123e4567-e89b-12d3-a456-426614174000",
+    "amenity_id": "323e4567-e89b-12d3-a456-426614174002",
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
 
-**Error Responses:**
-- `400 Bad Request` - Invalid request data or duplicate associations
-- `403 Forbidden` - Insufficient permissions
-- `404 Not Found` - Listing or amenity not found
+### Batch Delete Amenities
+
+**Endpoint:** `DELETE /api/v1/listing-amenities/batch`
+
+**Request Body:**
+```json
+{
+  "items": [
+    {
+      "listing_id": "123e4567-e89b-12d3-a456-426614174000",
+      "amenity_id": "223e4567-e89b-12d3-a456-426614174001"
+    }
+  ]
+}
+```
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "423e4567-e89b-12d3-a456-426614174003",
+    "listing_id": "123e4567-e89b-12d3-a456-426614174000",
+    "amenity_id": "223e4567-e89b-12d3-a456-426614174001",
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
 
 ---
 
-## 2. Listing Activities Batch Add
+## 2. Listing Activities
+
+### Batch Create Activities
 
 **Endpoint:** `POST /api/v1/listing-activities/batch`
 
@@ -105,11 +225,30 @@ All batch endpoints follow the same pattern:
 ```
 
 **Response:** `201 Created`
-- Returns array of `ListingActivityRecord` objects
+```json
+[
+  {
+    "id": "423e4567-e89b-12d3-a456-426614174003",
+    "listing_id": "123e4567-e89b-12d3-a456-426614174000",
+    "activity_id": "223e4567-e89b-12d3-a456-426614174001",
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+### Batch Delete Activities
+
+**Endpoint:** `DELETE /api/v1/listing-activities/batch`
+
+**Request Body:** Same as create
+
+**Response:** `200 OK` - Array of deleted associations
 
 ---
 
-## 3. Listing Languages Batch Add
+## 3. Listing Languages
+
+### Batch Create Languages
 
 **Endpoint:** `POST /api/v1/listing-languages/batch`
 
@@ -120,21 +259,24 @@ All batch endpoints follow the same pattern:
     {
       "listing_id": "123e4567-e89b-12d3-a456-426614174000",
       "language_id": "223e4567-e89b-12d3-a456-426614174001"
-    },
-    {
-      "listing_id": "123e4567-e89b-12d3-a456-426614174000",
-      "language_id": "323e4567-e89b-12d3-a456-426614174002"
     }
   ]
 }
 ```
 
-**Response:** `201 Created`
-- Returns array of `ListingLanguageRecord` objects
+### Batch Delete Languages
+
+**Endpoint:** `DELETE /api/v1/listing-languages/batch`
+
+**Request Body:** Same as create
+
+**Response:** `200 OK` - Array of deleted associations
 
 ---
 
-## 4. Listing Certifications Batch Add
+## 4. Listing Certifications
+
+### Batch Create Certifications
 
 **Endpoint:** `POST /api/v1/listing-certifications/batch`
 
@@ -159,11 +301,41 @@ All batch endpoints follow the same pattern:
 **Note:** `license_number` is optional and can be `null`.
 
 **Response:** `201 Created`
-- Returns array of `ListingCertificationRecord` objects
+```json
+[
+  {
+    "id": "423e4567-e89b-12d3-a456-426614174003",
+    "listing_id": "123e4567-e89b-12d3-a456-426614174000",
+    "certification_id": "223e4567-e89b-12d3-a456-426614174001",
+    "license_number": "LIC-12345",
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+### Batch Delete Certifications
+
+**Endpoint:** `DELETE /api/v1/listing-certifications/batch`
+
+**Request Body:**
+```json
+{
+  "items": [
+    {
+      "listing_id": "123e4567-e89b-12d3-a456-426614174000",
+      "certification_id": "223e4567-e89b-12d3-a456-426614174001"
+    }
+  ]
+}
+```
+
+**Response:** `200 OK` - Array of deleted associations
 
 ---
 
-## 5. Listing Dining Options Batch Add
+## 5. Listing Dining Options
+
+### Batch Create Dining Options
 
 **Endpoint:** `POST /api/v1/listing-dining-options/batch`
 
@@ -174,21 +346,24 @@ All batch endpoints follow the same pattern:
     {
       "listing_id": "123e4567-e89b-12d3-a456-426614174000",
       "dining_option_id": "223e4567-e89b-12d3-a456-426614174001"
-    },
-    {
-      "listing_id": "123e4567-e89b-12d3-a456-426614174000",
-      "dining_option_id": "323e4567-e89b-12d3-a456-426614174002"
     }
   ]
 }
 ```
 
-**Response:** `201 Created`
-- Returns array of `ListingDiningOptionRecord` objects
+### Batch Delete Dining Options
+
+**Endpoint:** `DELETE /api/v1/listing-dining-options/batch`
+
+**Request Body:** Same as create
+
+**Response:** `200 OK` - Array of deleted associations
 
 ---
 
-## 6. Listing Safety Features Batch Add
+## 6. Listing Safety Features
+
+### Batch Create Safety Features
 
 **Endpoint:** `POST /api/v1/listing-safety-features/batch`
 
@@ -199,21 +374,24 @@ All batch endpoints follow the same pattern:
     {
       "listing_id": "123e4567-e89b-12d3-a456-426614174000",
       "safety_feature_id": "223e4567-e89b-12d3-a456-426614174001"
-    },
-    {
-      "listing_id": "123e4567-e89b-12d3-a456-426614174000",
-      "safety_feature_id": "323e4567-e89b-12d3-a456-426614174002"
     }
   ]
 }
 ```
 
-**Response:** `201 Created`
-- Returns array of `ListingSafetyFeatureRecord` objects
+### Batch Delete Safety Features
+
+**Endpoint:** `DELETE /api/v1/listing-safety-features/batch`
+
+**Request Body:** Same as create
+
+**Response:** `200 OK` - Array of deleted associations
 
 ---
 
-## 7. Listing Insurance Options Batch Add
+## 7. Listing Insurance Options
+
+### Batch Create Insurance Options
 
 **Endpoint:** `POST /api/v1/listing-insurance-options/batch`
 
@@ -224,21 +402,24 @@ All batch endpoints follow the same pattern:
     {
       "listing_id": "123e4567-e89b-12d3-a456-426614174000",
       "insurance_option_id": "223e4567-e89b-12d3-a456-426614174001"
-    },
-    {
-      "listing_id": "123e4567-e89b-12d3-a456-426614174000",
-      "insurance_option_id": "323e4567-e89b-12d3-a456-426614174002"
     }
   ]
 }
 ```
 
-**Response:** `201 Created`
-- Returns array of `ListingInsuranceOptionRecord` objects
+### Batch Delete Insurance Options
+
+**Endpoint:** `DELETE /api/v1/listing-insurance-options/batch`
+
+**Request Body:** Same as create
+
+**Response:** `200 OK` - Array of deleted associations
 
 ---
 
-## 8. Listing House Rules Batch Add
+## 8. Listing House Rules
+
+### Batch Create House Rules
 
 **Endpoint:** `POST /api/v1/listing-house-rules/batch`
 
@@ -260,14 +441,44 @@ All batch endpoints follow the same pattern:
 }
 ```
 
-**Note:** `display_order` should be auto-incremented if not provided, or use the index in the array.
+**Note:** `display_order` is optional. If not provided, it will be auto-incremented based on the item's position in the array (0, 1, 2, ...).
 
 **Response:** `201 Created`
-- Returns array of `ListingHouseRuleRecord` objects
+```json
+[
+  {
+    "id": "423e4567-e89b-12d3-a456-426614174003",
+    "listing_id": "123e4567-e89b-12d3-a456-426614174000",
+    "house_rule_id": "223e4567-e89b-12d3-a456-426614174001",
+    "display_order": 1,
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+### Batch Delete House Rules
+
+**Endpoint:** `DELETE /api/v1/listing-house-rules/batch`
+
+**Request Body:**
+```json
+{
+  "items": [
+    {
+      "listing_id": "123e4567-e89b-12d3-a456-426614174000",
+      "house_rule_id": "223e4567-e89b-12d3-a456-426614174001"
+    }
+  ]
+}
+```
+
+**Response:** `200 OK` - Array of deleted associations
 
 ---
 
-## 9. Listing Equipment Batch Add
+## 9. Listing Equipment
+
+### Batch Create Equipment
 
 **Endpoint:** `POST /api/v1/listing-equipment/batch`
 
@@ -289,14 +500,44 @@ All batch endpoints follow the same pattern:
 }
 ```
 
-**Note:** `quantity` should default to `1` if not provided.
+**Note:** `quantity` defaults to `1` if not provided.
 
 **Response:** `201 Created`
-- Returns array of `ListingEquipmentRecord` objects
+```json
+[
+  {
+    "id": "423e4567-e89b-12d3-a456-426614174003",
+    "listing_id": "123e4567-e89b-12d3-a456-426614174000",
+    "equipment_id": "223e4567-e89b-12d3-a456-426614174001",
+    "quantity": 5,
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+### Batch Delete Equipment
+
+**Endpoint:** `DELETE /api/v1/listing-equipment/batch`
+
+**Request Body:**
+```json
+{
+  "items": [
+    {
+      "listing_id": "123e4567-e89b-12d3-a456-426614174000",
+      "equipment_id": "223e4567-e89b-12d3-a456-426614174001"
+    }
+  ]
+}
+```
+
+**Response:** `200 OK` - Array of deleted associations
 
 ---
 
-## 10. Listing Services (Treatment Services) Batch Add
+## 10. Listing Services (Treatment Services)
+
+### Batch Create Services
 
 **Endpoint:** `POST /api/v1/listing-services/batch`
 
@@ -322,10 +563,56 @@ All batch endpoints follow the same pattern:
 
 **Note:** 
 - `price` is optional and can be `null`
-- `is_included` should default to `false` if not provided
+- `is_included` defaults to `false` if not provided
 
 **Response:** `201 Created`
-- Returns array of `ListingServiceRecord` objects
+```json
+[
+  {
+    "id": "423e4567-e89b-12d3-a456-426614174003",
+    "listing_id": "123e4567-e89b-12d3-a456-426614174000",
+    "treatment_service_id": "223e4567-e89b-12d3-a456-426614174001",
+    "price": 50.00,
+    "is_included": false,
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+### Batch Delete Services
+
+**Endpoint:** `DELETE /api/v1/listing-services/batch`
+
+**Request Body:**
+```json
+{
+  "items": [
+    {
+      "listing_id": "123e4567-e89b-12d3-a456-426614174000",
+      "treatment_service_id": "223e4567-e89b-12d3-a456-426614174001"
+    }
+  ]
+}
+```
+
+**Response:** `200 OK` - Array of deleted associations
+
+---
+
+## Endpoint Summary
+
+| Feature Type | Create Endpoint | Delete Endpoint |
+|-------------|----------------|-----------------|
+| Amenities | `POST /listing-amenities/batch` | `DELETE /listing-amenities/batch` |
+| Activities | `POST /listing-activities/batch` | `DELETE /listing-activities/batch` |
+| Languages | `POST /listing-languages/batch` | `DELETE /listing-languages/batch` |
+| Certifications | `POST /listing-certifications/batch` | `DELETE /listing-certifications/batch` |
+| Dining Options | `POST /listing-dining-options/batch` | `DELETE /listing-dining-options/batch` |
+| Safety Features | `POST /listing-safety-features/batch` | `DELETE /listing-safety-features/batch` |
+| Insurance Options | `POST /listing-insurance-options/batch` | `DELETE /listing-insurance-options/batch` |
+| House Rules | `POST /listing-house-rules/batch` | `DELETE /listing-house-rules/batch` |
+| Equipment | `POST /listing-equipment/batch` | `DELETE /listing-equipment/batch` |
+| Services | `POST /listing-services/batch` | `DELETE /listing-services/batch` |
 
 ---
 
@@ -383,20 +670,5 @@ All batch endpoints follow the same pattern:
 
 ---
 
-## Summary
-
-**Total Endpoints Required:** 10 batch endpoints
-
-1. `POST /api/v1/listing-amenities/batch`
-2. `POST /api/v1/listing-activities/batch`
-3. `POST /api/v1/listing-languages/batch`
-4. `POST /api/v1/listing-certifications/batch`
-5. `POST /api/v1/listing-dining-options/batch`
-6. `POST /api/v1/listing-safety-features/batch`
-7. `POST /api/v1/listing-insurance-options/batch`
-8. `POST /api/v1/listing-house-rules/batch`
-9. `POST /api/v1/listing-equipment/batch`
-10. `POST /api/v1/listing-services/batch`
-
-All endpoints should follow the same pattern and validation rules for consistency.
-
+**Last Updated:** 2024
+**Version:** 1.0

@@ -71,8 +71,17 @@ function makeAssoc<T>(resource: string) {
     list: (listingId: string) =>
       api.get<T[]>(`/${resource}/listing/${listingId}`),
     add: (data: Record<string, unknown>) => api.post<T>(`/${resource}`, data),
-    addBatch: (items: Record<string, unknown>[]) => api.post<T[]>(`/${resource}/batch`, { items }),
+    addBatch: (items: Record<string, unknown>[]) => {
+      const path = `/${resource}/batch`;
+      console.log(`[Batch Add] Calling: ${path}`, { items });
+      return api.post<T[]>(path, { items });
+    },
     remove: (id: string) => api.delete<void>(`/${resource}/${id}`),
+    removeBatch: (items: Record<string, unknown>[]) => {
+      const path = `/${resource}/batch`;
+      console.log(`[Batch Delete] Calling: ${path}`, { items });
+      return api.delete<T[]>(path, { data: { items } });
+    },
   };
 }
 

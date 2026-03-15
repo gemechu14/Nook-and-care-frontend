@@ -91,11 +91,11 @@ function FeaturePanel<C extends { id: string; name: string }, R extends { id: st
 
     setIsSaving(true);
     try {
-      if (onAddBatch && selectedItems.size > 1) {
-        // Batch add if available
+      if (onAddBatch) {
+        // Always use batch if available (even for single items)
         await onAddBatch(Array.from(selectedItems));
       } else {
-        // Add one by one
+        // Fallback to individual adds if batch not available
         for (const itemId of selectedItems) {
           await onAdd(itemId);
         }
@@ -473,6 +473,7 @@ export default function ListingManagePage() {
     featureKey: keyof typeof activeFeatures,
     addFn: (data: Record<string, unknown>) => Promise<R>,
     addBatchFn: ((items: Record<string, unknown>[]) => Promise<R[]>) | undefined,
+    removeBatchFn: ((items: Record<string, unknown>[]) => Promise<R[]>) | undefined,
     buildPayload: (itemId: string) => Record<string, unknown>,
     getItemId: (r: R) => string,
   ) => ({
@@ -505,6 +506,21 @@ export default function ListingManagePage() {
         setActiveFeatures((prev) => ({ ...prev, [featureKey]: (prev[featureKey] as unknown as R[]).filter((r) => r.id !== recordId) }));
       } finally { setSavingId(null); }
     },
+    onRemoveBatch: removeBatchFn ? async (itemIds: string[]) => {
+      if (!listing || itemIds.length === 0) return;
+      try {
+        const payloads = itemIds.map(buildPayload);
+        await removeBatchFn(payloads);
+        const itemIdSet = new Set(itemIds);
+        setActiveFeatures((prev) => ({ 
+          ...prev, 
+          [featureKey]: (prev[featureKey] as unknown as R[]).filter((r) => !itemIdSet.has(getItemId(r))) 
+        }));
+      } catch (error) {
+        console.error("Batch remove failed:", error);
+        throw error;
+      }
+    } : undefined,
   });
 
   const tabs: { id: TabId; label: string; count?: number }[] = [
@@ -726,52 +742,52 @@ export default function ListingManagePage() {
               <FeaturePanel title="Amenities" catalogItems={catalog.amenities} activeRecords={activeFeatures.amenities}
                 getItemId={(r) => r.amenity_id}
                 savingId={savingId}
-                {...makeFeatureHandlers("amenities", listingFeaturesApi.amenities.add, listingFeaturesApi.amenities.addBatch, (id) => ({ listing_id: listing.id, amenity_id: id }), (r) => r.amenity_id)} />
+                {...makeFeatureHandlers("amenities", listingFeaturesApi.amenities.add, listingFeaturesApi.amenities.addBatch, listingFeaturesApi.amenities.removeBatch, (id) => ({ listing_id: listing.id, amenity_id: id }), (r) => r.amenity_id)} />
             )}
             {activeTab === "activities" && (
               <FeaturePanel title="Activities" catalogItems={catalog.activities} activeRecords={activeFeatures.activities}
                 getItemId={(r) => r.activity_id} savingId={savingId}
-                {...makeFeatureHandlers("activities", listingFeaturesApi.activities.add, listingFeaturesApi.activities.addBatch, (id) => ({ listing_id: listing.id, activity_id: id }), (r) => r.activity_id)} />
+                {...makeFeatureHandlers("activities", listingFeaturesApi.activities.add, listingFeaturesApi.activities.addBatch, listingFeaturesApi.activities.removeBatch, (id) => ({ listing_id: listing.id, activity_id: id }), (r) => r.activity_id)} />
             )}
             {activeTab === "languages" && (
               <FeaturePanel title="Languages" catalogItems={catalog.languages} activeRecords={activeFeatures.languages}
                 getItemId={(r) => r.language_id} savingId={savingId}
-                {...makeFeatureHandlers("languages", listingFeaturesApi.languages.add, listingFeaturesApi.languages.addBatch, (id) => ({ listing_id: listing.id, language_id: id }), (r) => r.language_id)} />
+                {...makeFeatureHandlers("languages", listingFeaturesApi.languages.add, listingFeaturesApi.languages.addBatch, listingFeaturesApi.languages.removeBatch, (id) => ({ listing_id: listing.id, language_id: id }), (r) => r.language_id)} />
             )}
             {activeTab === "certifications" && (
               <FeaturePanel title="Certifications" catalogItems={catalog.certifications} activeRecords={activeFeatures.certifications}
                 getItemId={(r) => r.certification_id} savingId={savingId}
-                {...makeFeatureHandlers("certifications", listingFeaturesApi.certifications.add, listingFeaturesApi.certifications.addBatch, (id) => ({ listing_id: listing.id, certification_id: id }), (r) => r.certification_id)} />
+                {...makeFeatureHandlers("certifications", listingFeaturesApi.certifications.add, listingFeaturesApi.certifications.addBatch, listingFeaturesApi.certifications.removeBatch, (id) => ({ listing_id: listing.id, certification_id: id }), (r) => r.certification_id)} />
             )}
             {activeTab === "dining" && (
               <FeaturePanel title="Dining Options" catalogItems={catalog.diningOptions} activeRecords={activeFeatures.diningOptions}
                 getItemId={(r) => r.dining_option_id} savingId={savingId}
-                {...makeFeatureHandlers("diningOptions", listingFeaturesApi.diningOptions.add, listingFeaturesApi.diningOptions.addBatch, (id) => ({ listing_id: listing.id, dining_option_id: id }), (r) => r.dining_option_id)} />
+                {...makeFeatureHandlers("diningOptions", listingFeaturesApi.diningOptions.add, listingFeaturesApi.diningOptions.addBatch, listingFeaturesApi.diningOptions.removeBatch, (id) => ({ listing_id: listing.id, dining_option_id: id }), (r) => r.dining_option_id)} />
             )}
             {activeTab === "safety" && (
               <FeaturePanel title="Safety Features" catalogItems={catalog.safetyFeatures} activeRecords={activeFeatures.safetyFeatures}
                 getItemId={(r) => r.safety_feature_id} savingId={savingId}
-                {...makeFeatureHandlers("safetyFeatures", listingFeaturesApi.safetyFeatures.add, listingFeaturesApi.safetyFeatures.addBatch, (id) => ({ listing_id: listing.id, safety_feature_id: id }), (r) => r.safety_feature_id)} />
+                {...makeFeatureHandlers("safetyFeatures", listingFeaturesApi.safetyFeatures.add, listingFeaturesApi.safetyFeatures.addBatch, listingFeaturesApi.safetyFeatures.removeBatch, (id) => ({ listing_id: listing.id, safety_feature_id: id }), (r) => r.safety_feature_id)} />
             )}
             {activeTab === "insurance" && (
               <FeaturePanel title="Insurance Options" catalogItems={catalog.insuranceOptions} activeRecords={activeFeatures.insuranceOptions}
                 getItemId={(r) => r.insurance_option_id} savingId={savingId}
-                {...makeFeatureHandlers("insuranceOptions", listingFeaturesApi.insuranceOptions.add, listingFeaturesApi.insuranceOptions.addBatch, (id) => ({ listing_id: listing.id, insurance_option_id: id }), (r) => r.insurance_option_id)} />
+                {...makeFeatureHandlers("insuranceOptions", listingFeaturesApi.insuranceOptions.add, listingFeaturesApi.insuranceOptions.addBatch, listingFeaturesApi.insuranceOptions.removeBatch, (id) => ({ listing_id: listing.id, insurance_option_id: id }), (r) => r.insurance_option_id)} />
             )}
             {activeTab === "rules" && (
               <FeaturePanel title="House Rules" catalogItems={catalog.houseRules} activeRecords={activeFeatures.houseRules}
                 getItemId={(r) => r.house_rule_id} savingId={savingId}
-                {...makeFeatureHandlers("houseRules", listingFeaturesApi.houseRules.add, listingFeaturesApi.houseRules.addBatch, (id) => ({ listing_id: listing.id, house_rule_id: id }), (r) => r.house_rule_id)} />
+                {...makeFeatureHandlers("houseRules", listingFeaturesApi.houseRules.add, listingFeaturesApi.houseRules.addBatch, listingFeaturesApi.houseRules.removeBatch, (id) => ({ listing_id: listing.id, house_rule_id: id }), (r) => r.house_rule_id)} />
             )}
             {activeTab === "equipment" && (
               <FeaturePanel title="Equipment" catalogItems={catalog.equipment} activeRecords={activeFeatures.equipment}
                 getItemId={(r) => r.equipment_id} savingId={savingId}
-                {...makeFeatureHandlers("equipment", listingFeaturesApi.equipment.add, listingFeaturesApi.equipment.addBatch, (id) => ({ listing_id: listing.id, equipment_id: id }), (r) => r.equipment_id)} />
+                {...makeFeatureHandlers("equipment", listingFeaturesApi.equipment.add, listingFeaturesApi.equipment.addBatch, listingFeaturesApi.equipment.removeBatch, (id) => ({ listing_id: listing.id, equipment_id: id }), (r) => r.equipment_id)} />
             )}
             {activeTab === "services" && (
               <FeaturePanel title="Treatment Services" catalogItems={catalog.services} activeRecords={activeFeatures.services}
                 getItemId={(r) => r.treatment_service_id} savingId={savingId}
-                {...makeFeatureHandlers("services", listingFeaturesApi.services.add, listingFeaturesApi.services.addBatch, (id) => ({ listing_id: listing.id, treatment_service_id: id }), (r) => r.treatment_service_id)} />
+                {...makeFeatureHandlers("services", listingFeaturesApi.services.add, listingFeaturesApi.services.addBatch, listingFeaturesApi.services.removeBatch, (id) => ({ listing_id: listing.id, treatment_service_id: id }), (r) => r.treatment_service_id)} />
             )}
           </div>
         </div>

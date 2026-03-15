@@ -67,8 +67,8 @@ export const api = {
   patch: <T>(path: string, body?: unknown) =>
     axiosInstance.patch<T>(path, body).then((r) => r.data),
 
-  delete: <T>(path: string) =>
-    axiosInstance.delete<T>(path).then((r) => r.data),
+  delete: <T>(path: string, config?: { data?: unknown }) =>
+    axiosInstance.delete<T>(path, config).then((r) => r.data),
 
   postForm: <T>(path: string, formData: FormData) =>
     axiosInstance.post<T>(path, formData).then((r) => r.data),
