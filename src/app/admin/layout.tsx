@@ -13,6 +13,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, loading } = useAuth();
   const [activeNav, setActiveNav] = useState<NavId>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Sync activeNav with URL
   useEffect(() => {
@@ -74,10 +75,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         onNavChange={handleNavChange}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        isCollapsed={isCollapsed}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <AdminHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+        <AdminHeader 
+          onMenuClick={() => setSidebarOpen(!sidebarOpen)} 
+          onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+          isCollapsed={isCollapsed}
+        />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
           {children}
         </main>

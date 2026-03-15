@@ -12,6 +12,7 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onRefresh?: () => void;
+  isCollapsed?: boolean;
 }
 
 const NAV = [
@@ -62,7 +63,7 @@ const NAV = [
   },
 ];
 
-export function Sidebar({ activeNav, onNavChange, isOpen, onClose, onRefresh }: SidebarProps) {
+export function Sidebar({ activeNav, onNavChange, isOpen, onClose, onRefresh, isCollapsed = false }: SidebarProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
@@ -110,36 +111,43 @@ export function Sidebar({ activeNav, onNavChange, isOpen, onClose, onRefresh }: 
         ref={sidebarRef}
         className={`
           fixed lg:static inset-y-0 left-0 z-50
-          w-64 sm:w-56 bg-[#1a2035] text-white flex flex-col
-          transform transition-transform duration-300 ease-in-out
+          bg-[#1a2035] text-white flex flex-col
+          transform transition-all duration-300 ease-in-out
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+          ${isCollapsed ? "w-16 lg:w-16" : "w-64 sm:w-56 lg:w-56"}
         `}
       >
         {/* Logo */}
-        <div className="flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
-          <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center font-bold text-sm">
+        <div className={`flex items-center gap-2.5 px-5 py-5 border-b border-white/10 ${isCollapsed ? "justify-center px-0" : ""}`}>
+          <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center font-bold text-sm shrink-0">
             N
           </div>
-          <span className="font-bold text-base">Nook Admin</span>
+          {!isCollapsed && <span className="font-bold text-base whitespace-nowrap">Nook Admin</span>}
         </div>
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          <p className="text-xs font-semibold text-white/40 uppercase tracking-widest px-3 mb-3">
-            Menu
-          </p>
+          {!isCollapsed && (
+            <p className="text-xs font-semibold text-white/40 uppercase tracking-widest px-3 mb-3">
+              Menu
+            </p>
+          )}
           <ul className="space-y-0.5">
             {NAV.map(({ id, label, icon }) => (
               <li key={id}>
                 <button
                   onClick={() => handleNavClick(id)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    isCollapsed ? "justify-center" : ""
+                  } ${
                     activeNav === id
                       ? "bg-teal-500/20 text-teal-400"
                       : "text-white/60 hover:bg-white/5 hover:text-white"
                   }`}
+                  title={isCollapsed ? label : undefined}
                 >
-                  {icon} {label}
+                  <span className="shrink-0">{icon}</span>
+                  {!isCollapsed && <span>{label}</span>}
                 </button>
               </li>
             ))}
@@ -147,31 +155,38 @@ export function Sidebar({ activeNav, onNavChange, isOpen, onClose, onRefresh }: 
         </nav>
 
         {/* User */}
-        <div ref={avatarMenuRef} className="px-4 py-4 border-t border-white/10 relative">
+        <div ref={avatarMenuRef} className={`px-4 py-4 border-t border-white/10 relative ${isCollapsed ? "px-2" : ""}`}>
           <button
             onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
-            className="w-full flex items-center gap-2.5 hover:bg-white/5 rounded-lg p-2 transition-colors"
+            className={`w-full flex items-center gap-2.5 hover:bg-white/5 rounded-lg p-2 transition-colors ${isCollapsed ? "justify-center" : ""}`}
+            title={isCollapsed ? `${user?.full_name ?? "Admin"}\n${user?.email}` : undefined}
           >
-            <div className="w-8 h-8 rounded-full bg-teal-500/30 flex items-center justify-center text-xs font-bold text-teal-400">
+            <div className="w-8 h-8 rounded-full bg-teal-500/30 flex items-center justify-center text-xs font-bold text-teal-400 shrink-0">
               {user?.full_name?.[0] ?? "A"}
             </div>
-            <div className="flex-1 min-w-0 text-left">
-              <p className="text-sm font-medium text-white truncate">{user?.full_name ?? "Admin"}</p>
-              <p className="text-xs text-white/40 truncate">{user?.email}</p>
-            </div>
-            <svg 
-              className={`w-4 h-4 text-white/40 transition-transform ${avatarMenuOpen ? "rotate-180" : ""}`}
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            {!isCollapsed && (
+              <>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-sm font-medium text-white truncate">{user?.full_name ?? "Admin"}</p>
+                  <p className="text-xs text-white/40 truncate">{user?.email}</p>
+                </div>
+                <svg 
+                  className={`w-4 h-4 text-white/40 transition-transform shrink-0 ${avatarMenuOpen ? "rotate-180" : ""}`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </>
+            )}
           </button>
 
           {/* Dropdown menu */}
           {avatarMenuOpen && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50">
+            <div className={`absolute bottom-full mb-2 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50 ${
+              isCollapsed ? "left-0 right-auto min-w-[200px]" : "left-0 right-0"
+            }`}>
               <button
                 onClick={() => {
                   setAvatarMenuOpen(false);
