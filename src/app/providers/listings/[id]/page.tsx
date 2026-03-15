@@ -424,131 +424,131 @@ export default function ListingManagePage() {
         <div className="p-6">
           {/* Details Tab */}
           {activeTab === "details" && (
-            <form onSubmit={saveDetails} className="space-y-6">
+            <form onSubmit={saveDetails} className="space-y-5">
               {detailsSuccess && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm font-medium">
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-xs font-medium">
                   Changes saved successfully!
                 </div>
               )}
-              <div className="grid sm:grid-cols-2 gap-6">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">Title</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Title</label>
                   <input 
                     value={detailsForm.title ?? ""} 
                     onChange={(e) => setDetailsForm((p) => ({ ...p, title: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-white" 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">Care Type</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Care Type</label>
                   <select 
                     value={detailsForm.care_type ?? ""} 
                     onChange={(e) => setDetailsForm((p) => ({ ...p, care_type: e.target.value as ApiCareType }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none bg-white transition-colors"
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none bg-white transition-colors"
                   >
                     {CARE_TYPES.map((ct) => <option key={ct} value={ct}>{CARE_TYPE_LABELS[ct]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">Price ($/mo)</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Price ($/mo)</label>
                   <input 
                     type="number" 
                     value={detailsForm.price ?? ""} 
                     onChange={(e) => setDetailsForm((p) => ({ ...p, price: Number(e.target.value) || undefined }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-white" 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">City</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">City</label>
                   <input 
                     value={detailsForm.city ?? ""} 
                     onChange={(e) => setDetailsForm((p) => ({ ...p, city: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-white" 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">State</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">State</label>
                   <input 
                     value={detailsForm.state ?? ""} 
                     onChange={(e) => setDetailsForm((p) => ({ ...p, state: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-white" 
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">Address</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Address</label>
                   <input 
                     value={detailsForm.address ?? ""} 
                     onChange={(e) => setDetailsForm((p) => ({ ...p, address: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-white" 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">Phone</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Phone</label>
                   <input 
                     value={detailsForm.phone ?? ""} 
                     onChange={(e) => setDetailsForm((p) => ({ ...p, phone: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-white" 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">Email</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Email</label>
                   <input 
                     type="email" 
                     value={detailsForm.email ?? ""} 
                     onChange={(e) => setDetailsForm((p) => ({ ...p, email: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-white" 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">Capacity</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Capacity</label>
                   <input 
                     type="number" 
                     value={detailsForm.capacity ?? ""} 
                     onChange={(e) => setDetailsForm((p) => ({ ...p, capacity: Number(e.target.value) || undefined }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-white" 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">License Number</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">License Number</label>
                   <input 
                     value={detailsForm.license_number ?? ""} 
                     onChange={(e) => setDetailsForm((p) => ({ ...p, license_number: e.target.value }))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors" 
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-white" 
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">Description</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Description</label>
                   <textarea 
                     value={detailsForm.description ?? ""} 
                     onChange={(e) => setDetailsForm((p) => ({ ...p, description: e.target.value }))}
                     rows={4} 
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none resize-none transition-colors" 
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none resize-none transition-colors bg-white" 
                   />
                 </div>
-                <div className="sm:col-span-2 flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                <div className="sm:col-span-2 flex items-center gap-2.5 p-3 bg-slate-50 rounded-lg">
                   <input 
                     type="checkbox" 
                     id="has24" 
                     checked={!!detailsForm.has_24_hour_care}
                     onChange={(e) => setDetailsForm((p) => ({ ...p, has_24_hour_care: e.target.checked }))}
-                    className="w-5 h-5 accent-teal-600 rounded cursor-pointer" 
+                    className="w-4 h-4 accent-teal-600 rounded cursor-pointer" 
                   />
-                  <label htmlFor="has24" className="text-sm font-medium text-slate-700 cursor-pointer">
+                  <label htmlFor="has24" className="text-xs font-medium text-slate-700 cursor-pointer">
                     24-Hour Care Available
                   </label>
                 </div>
               </div>
-              <div className="flex justify-end pt-4 border-t border-slate-200">
+              <div className="flex justify-end pt-3 border-t border-slate-200">
                 <button 
                   type="submit" 
                   disabled={detailsSaving}
-                  className="bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed min-w-[140px]"
+                  className="bg-teal-600 text-white px-5 py-2 text-sm rounded-lg font-medium hover:bg-teal-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {detailsSaving ? "Saving…" : "Save Changes"}
                 </button>
               </div>
-              </form>
-            )}
+            </form>
+          )}
 
             {/* ── Images ── */}
             {activeTab === "images" && (
