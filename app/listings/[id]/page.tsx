@@ -3,6 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useParams } from "next/navigation";
+import { listingsApi } from "@/lib/api/listings";
+import { listingImagesApi } from "@/lib/api/listingImages";
+import type { ApiListing, ApiListingImage } from "@/types";
+import { CARE_TYPE_LABELS, CARE_TYPE_COLORS } from "@/types";
 
 interface ListingDetail {
   id: string;
@@ -316,12 +321,82 @@ function CalendarPicker({ onSelect }: { onSelect: (date: Date) => void }) {
   );
 }
 
-export default function ListingDetailPage({ params }: { params: { id: string } }) {
+export default function ListingDetailPage() {
+  const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<"services" | "reviews" | "location">("services");
   const [scheduleTourOpen, setScheduleTourOpen] = useState(false);
   const [requestInfoOpen, setRequestInfoOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const listing = mockListings[params.id] || mockListings["3"];
+
+  // API state
+  const [apiListing, setApiListing] = useState<ApiListing | null>(null);
+  const [apiImages, setApiImages] = useState<ApiListingImage[]>([]);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) { setPageError("Invalid listing ID."); setPageLoading(false); return; }
+    // Check if it's a mock ID (1-4) — use mock data; otherwise fetch from API
+    if (mockListings[id]) { setPageLoading(false); return; }
+    (async () => {
+      try {
+        const [data, imgs] = await Promise.all([
+          listingsApi.getById(id),
+          listingImagesApi.getByListing(id).catch(() => [] as ApiListingImage[]),
+        ]);
+        setApiListing(data);
+        setApiImages(imgs);
+      } catch (err) {
+        setPageError(err instanceof Error ? err.message : "Community not found.");
+      } finally {
+        setPageLoading(false);
+      }
+    })();
+  }, [id]);
+
+  // Build a unified listing object from either API or mock data
+  const rawMock = id ? mockListings[id] : null;
+  const listing: ListingDetail | null = rawMock ?? (apiListing ? {
+    id: apiListing.id,
+    title: apiListing.title,
+    address: [apiListing.address, apiListing.city, apiListing.state].filter(Boolean).join(", "),
+    careTypes: [{ label: CARE_TYPE_LABELS[apiListing.care_type] ?? apiListing.care_type, color: CARE_TYPE_COLORS[apiListing.care_type] ?? "teal" }],
+    price: apiListing.price ?? 0,
+    maxPrice: (apiListing.price ?? 0) * 1.2,
+    rating: apiListing.avg_rating ?? 0,
+    reviewCount: apiListing.review_count,
+    bedsAvailable: apiListing.available_beds ?? 0,
+    capacity: apiListing.capacity ?? 0,
+    staffRatio: "—",
+    phone: apiListing.phone ?? "",
+    email: apiListing.email ?? "",
+    website: "",
+    licenseNumber: apiListing.license_number ?? "",
+    established: new Date(apiListing.created_at).getFullYear().toString(),
+    images: apiImages.length > 0
+      ? apiImages.sort((a, b) => a.display_order - b.display_order).map((img) =>
+          img.image_url ?? listingImagesApi.getDownloadUrl(img.id)
+        )
+      : ["https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80"],
+    description: apiListing.description ?? "",
+    careServices: apiListing.has_24_hour_care ? ["24-hour care available"] : [],
+    amenities: [], activities: [], diningOptions: [],
+    safetyFeatures: [], certifications: [], insuranceAccepted: [],
+  } : null);
+
+  if (pageLoading) return (
+    <div className="min-h-screen bg-white pt-16 flex items-center justify-center">
+      <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  if (!listing) return (
+    <div className="min-h-screen bg-white pt-16 flex flex-col items-center justify-center gap-4 p-8 text-center">
+      <p className="text-xl font-semibold text-slate-700">Community not found</p>
+      <p className="text-slate-500">{pageError}</p>
+      <Link href="/search" className="text-teal-600 hover:text-teal-700 font-medium transition-colors">Browse all communities</Link>
+    </div>
+  );
 
   // Form states for Schedule Tour
   const [tourForm, setTourForm] = useState({

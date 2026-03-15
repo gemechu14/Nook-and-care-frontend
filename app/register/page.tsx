@@ -1,30 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const router = useRouter();
+  const { user, loading, register } = useAuth();
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    full_name: "",
+    phone: "",
+    role: "FAMILY" as "FAMILY" | "SENIOR" | "PROVIDER",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!loading && user) {
+      // Redirect based on role
+      if (user.role === "ADMIN") router.push("/admin");
+      else if (user.role === "PROVIDER") router.push("/providers/dashboard");
+      else router.push("/dashboard");
+    }
+  }, [user, loading, router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      alert("Passwords do not match");
+    setError(null);
+
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match");
       return;
     }
-    
-    if (password.length < 8) {
-      alert("Password must be at least 8 characters");
+
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters");
       return;
     }
-    
-    // Handle registration logic here
-    console.log("Registration attempt:", { email, password });
+
+    if (!form.full_name.trim()) {
+      setError("Full name is required");
+      return;
+    }
+
+    setRegistering(true);
+    try {
+      await register({
+        email: form.email,
+        password: form.password,
+        full_name: form.full_name,
+        phone: form.phone || undefined,
+        role: form.role,
+      });
+      // Redirect will happen via useEffect above
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Registration failed. Please try again.");
+    } finally {
+      setRegistering(false);
+    }
   };
 
   return (
@@ -46,8 +85,37 @@ export default function RegisterPage() {
           {/* Title */}
           <h1 className="text-2xl font-bold text-slate-900 mb-8">Create your account</h1>
 
+          {error && (
+            <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
           {/* Registration Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Full Name Field */}
+            <div>
+              <label htmlFor="full_name" className="block text-sm font-medium text-slate-700 mb-2">
+                Full Name
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  id="full_name"
+                  required
+                  value={form.full_name}
+                  onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))}
+                  placeholder="John Doe"
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-slate-50"
+                />
+              </div>
+            </div>
+
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
@@ -63,12 +131,51 @@ export default function RegisterPage() {
                   type="email"
                   id="email"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={form.email}
+                  onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                   placeholder="you@example.com"
                   className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-slate-50"
                 />
               </div>
+            </div>
+
+            {/* Phone Field */}
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-2">
+                Phone <span className="text-slate-400">(optional)</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </div>
+                <input
+                  type="tel"
+                  id="phone"
+                  value={form.phone}
+                  onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                  placeholder="(425) 555-0100"
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-slate-50"
+                />
+              </div>
+            </div>
+
+            {/* Role Field */}
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-slate-700 mb-2">
+                I am a
+              </label>
+              <select
+                id="role"
+                value={form.role}
+                onChange={(e) => setForm((p) => ({ ...p, role: e.target.value as typeof form.role }))}
+                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-slate-50"
+              >
+                <option value="FAMILY">Family Member</option>
+                <option value="SENIOR">Senior</option>
+                <option value="PROVIDER">Facility Provider</option>
+              </select>
             </div>
 
             {/* Password Field */}
@@ -86,8 +193,8 @@ export default function RegisterPage() {
                   type={showPassword ? "text" : "password"}
                   id="password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={form.password}
+                  onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
                   placeholder="Min. 8 characters"
                   minLength={8}
                   className="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-slate-50"
@@ -126,8 +233,8 @@ export default function RegisterPage() {
                   type={showConfirmPassword ? "text" : "password"}
                   id="confirmPassword"
                   required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  value={form.confirmPassword}
+                  onChange={(e) => setForm((p) => ({ ...p, confirmPassword: e.target.value }))}
                   placeholder="Re-enter password"
                   className="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors bg-slate-50"
                 />
@@ -153,9 +260,10 @@ export default function RegisterPage() {
             {/* Create Account Button */}
             <button
               type="submit"
-              className="w-full bg-teal-600 text-white py-3.5 rounded-xl font-semibold hover:bg-teal-700 transition-colors shadow-sm mt-6"
+              disabled={registering}
+              className="w-full bg-teal-600 text-white py-3.5 rounded-xl font-semibold hover:bg-teal-700 transition-colors shadow-sm mt-6 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Create account
+              {registering ? "Creating account…" : "Create account"}
             </button>
           </form>
 
