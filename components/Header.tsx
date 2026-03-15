@@ -2,17 +2,39 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export default function Header() {
   const pathname = usePathname();
+  const [isScrolled, setIsScrolled] = useState(false);
+  
   const isSearchPage = pathname === "/search";
   const isListingPage = pathname?.startsWith("/listings/");
   const isAssessmentPage = pathname === "/assessment";
-  const isWhiteHeader = isSearchPage || isListingPage || isAssessmentPage;
+  const isHowItWorksPage = pathname === "/how-it-works";
+  const isResourcesPage = pathname === "/resources";
+  const isHomePage = pathname === "/";
+  
+  // For non-home pages, always use white header
+  // For home page, use white header when scrolled
+  const isWhiteHeader = isSearchPage || isListingPage || isAssessmentPage || isHowItWorksPage || isResourcesPage || (isHomePage && isScrolled);
+  
+  useEffect(() => {
+    if (!isHomePage) return;
+    
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      // Switch to white header after scrolling 100px past the top
+      setIsScrolled(scrollY > 100);
+    };
+    
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isHomePage]);
   
   const headerClasses = isWhiteHeader
-    ? "fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200"
-    : "fixed top-0 left-0 right-0 z-50 bg-transparent";
+    ? "fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 transition-all duration-300"
+    : "fixed top-0 left-0 right-0 z-50 bg-transparent transition-all duration-300";
   
   const textColor = isWhiteHeader ? "text-slate-900" : "text-white";
   const hoverColor = isWhiteHeader ? "hover:text-teal-600" : "hover:text-teal-400";
@@ -39,6 +61,12 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-8">
           <Link href="/search" className={`${textColor} font-medium ${hoverColor} transition-colors`}>
             Find Care
+          </Link>
+          <Link href="/how-it-works" className={`${textColor} font-medium ${hoverColor} transition-colors`}>
+            How it Works
+          </Link>
+          <Link href="/resources" className={`${textColor} font-medium ${hoverColor} transition-colors`}>
+            Resources
           </Link>
           <Link href="/assessment" className={`${textColor} font-medium ${hoverColor} transition-colors`}>
             Assessment
