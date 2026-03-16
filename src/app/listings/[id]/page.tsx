@@ -345,6 +345,7 @@ export default function ListingDetailPage() {
   const [tourForm, setTourForm] = useState({
     date: "March 13th, 2026",
     time: "",
+    tourType: "IN_PERSON" as "IN_PERSON" | "VIRTUAL",
     name: "",
     email: "",
     phone: "",
@@ -416,6 +417,43 @@ export default function ListingDetailPage() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [calendarOpen]);
+
+  // Handle ESC key to close modals
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (scheduleTourOpen) {
+          setScheduleTourOpen(false);
+          setTourError(null);
+          setTourSuccess(false);
+        }
+        if (requestInfoOpen) {
+          setRequestInfoOpen(false);
+        }
+      }
+    };
+
+    if (scheduleTourOpen || requestInfoOpen) {
+      document.addEventListener("keydown", handleEsc);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+      document.body.style.overflow = "unset";
+    };
+  }, [scheduleTourOpen, requestInfoOpen]);
+
+  const closeScheduleTour = () => {
+    setScheduleTourOpen(false);
+    setTourError(null);
+    setTourSuccess(false);
+  };
+
+  const closeRequestInfo = () => {
+    setRequestInfoOpen(false);
+  };
 
   // Build a unified listing object from either API or mock data
   const rawMock = id ? mockListings[id] : null;
@@ -558,7 +596,7 @@ export default function ListingDetailPage() {
     try {
       await toursApi.create({
         listing_id: id,
-        tour_type: "IN_PERSON", // Default to IN_PERSON, could be made configurable
+        tour_type: tourForm.tourType,
         scheduled_at: scheduledAt,
         notes: tourForm.requests || undefined,
       });
@@ -568,6 +606,7 @@ export default function ListingDetailPage() {
       setTourForm({
         date: "March 13th, 2026",
         time: "",
+        tourType: "IN_PERSON",
         name: "",
         email: "",
         phone: "",
@@ -1076,10 +1115,37 @@ export default function ListingDetailPage() {
               </div>
             </div>
 
-            {/* Schedule Tour Form - Inline */}
-            {scheduleTourOpen && (
-              <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6 mb-4">
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4 sm:mb-6">Schedule a Tour</h2>
+          </aside>{/* END right */}
+
+        </div>
+      </div>
+
+      {/* Schedule Tour Modal */}
+      {scheduleTourOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={closeScheduleTour}
+          >
+            {/* Modal */}
+            <div
+              className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Schedule a Tour</h2>
+                <button
+                  onClick={closeScheduleTour}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  aria-label="Close"
+                >
+                  <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-4 sm:p-6">
 
                 {tourSuccess && (
                   <div className="mb-4 p-4 bg-teal-50 border border-teal-200 rounded-lg">
@@ -1122,7 +1188,7 @@ export default function ListingDetailPage() {
                       
                       {/* Calendar Picker */}
                       {calendarOpen && (
-                        <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-xl z-50 p-4">
+                        <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-xl z-[60] p-4">
                           <CalendarPicker onSelect={handleDateSelect} />
                         </div>
                       )}
@@ -1150,6 +1216,29 @@ export default function ListingDetailPage() {
                         <option value="2:00 PM">2:00 PM</option>
                         <option value="3:00 PM">3:00 PM</option>
                         <option value="4:00 PM">4:00 PM</option>
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tour Type */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Tour Type <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={tourForm.tourType}
+                        onChange={(e) => setTourForm({ ...tourForm, tourType: e.target.value as "IN_PERSON" | "VIRTUAL" })}
+                        className="w-full pl-4 pr-10 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none appearance-none bg-white"
+                        required
+                      >
+                        <option value="IN_PERSON">In-Person Tour</option>
+                        <option value="VIRTUAL">Virtual Tour</option>
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                         <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1216,11 +1305,7 @@ export default function ListingDetailPage() {
                   <div className="flex gap-3 pt-4">
                     <button
                       type="button"
-                      onClick={() => {
-                        setScheduleTourOpen(false);
-                        setTourError(null);
-                        setTourSuccess(false);
-                      }}
+                      onClick={closeScheduleTour}
                       disabled={tourSubmitting}
                       className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -1236,14 +1321,39 @@ export default function ListingDetailPage() {
                   </div>
                 </form>
               </div>
-            )}
+            </div>
+          </div>
+        </>
+      )}
 
-            {/* Request Information Form - Inline */}
-            {requestInfoOpen && (
-              <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6 mb-4">
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4 sm:mb-6">Request Information</h2>
+      {/* Request Information Modal */}
+      {requestInfoOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={closeRequestInfo}
+          >
+            {/* Modal */}
+            <div
+              className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Request Information</h2>
+                <button
+                  onClick={closeRequestInfo}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  aria-label="Close"
+                >
+                  <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-4 sm:p-6">
 
-                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setRequestInfoOpen(false); }}>
+                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); closeRequestInfo(); }}>
                   {/* Your Name */}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -1301,7 +1411,7 @@ export default function ListingDetailPage() {
                   <div className="flex gap-3 pt-4">
                     <button
                       type="button"
-                      onClick={() => setRequestInfoOpen(false)}
+                      onClick={closeRequestInfo}
                       className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors"
                     >
                       Cancel
@@ -1315,13 +1425,10 @@ export default function ListingDetailPage() {
                   </div>
                 </form>
               </div>
-            )}
-
-
-          </aside>{/* END right */}
-
-        </div>
-      </div>
+            </div>
+          </div>
+        </>
+      )}
 
     </div>
   );
