@@ -255,7 +255,7 @@ function CalendarPicker({ onSelect }: { onSelect: (date: Date) => void }) {
   };
 
   return (
-    <div className="w-64">
+    <div className="w-full sm:w-64">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <button
@@ -495,24 +495,24 @@ export default function ListingDetailPage() {
 
       {/* Breadcrumbs */}
       <div className="bg-white border-b border-slate-200">
-        <div className="px-[144px] py-4">
-          <nav className="flex items-center gap-2 text-sm text-slate-500">
+        <div className="px-4 sm:px-6 md:px-8 lg:px-[144px] py-3 sm:py-4">
+          <nav className="flex items-center gap-2 text-xs sm:text-sm text-slate-500">
             <Link href="/" className="hover:text-slate-900 transition-colors">Home</Link>
             <span>/</span>
             <Link href="/search" className="hover:text-slate-900 transition-colors">Search</Link>
             <span>/</span>
-            <span className="text-slate-900 font-medium truncate max-w-xs">{listing.title}</span>
+            <span className="text-slate-900 font-medium truncate max-w-[150px] sm:max-w-xs">{listing.title}</span>
           </nav>
         </div>
       </div>
 
-      <div className="px-[144px] py-8">
+      <div className="px-4 sm:px-6 md:px-8 lg:px-[144px] py-4 sm:py-6 md:py-8">
 
         {/* ── Full-Width Image Gallery ────────────────────────────── */}
-        <div className="grid gap-2 mb-8 rounded-xl overflow-hidden" style={{ gridTemplateColumns: "3fr 2fr", height: "460px" }}>
+        <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-2 mb-6 sm:mb-8 rounded-xl overflow-hidden h-[300px] sm:h-[400px] md:h-[460px]">
 
           {/* Main large image */}
-          <div className="relative overflow-hidden group">
+          <div className="relative overflow-hidden group rounded-t-xl md:rounded-l-xl md:rounded-tr-none">
             <Image
               src={listing.images[0]}
               alt={listing.title}
@@ -524,7 +524,7 @@ export default function ListingDetailPage() {
           </div>
 
           {/* Right 2×2 grid */}
-          <div className="grid grid-cols-2 grid-rows-2 gap-2">
+          <div className="grid grid-cols-2 grid-rows-2 gap-2 hidden md:grid">
             {/* Top-left */}
             <div className="relative overflow-hidden group">
               <Image
@@ -574,13 +574,23 @@ export default function ListingDetailPage() {
               </button>
             </div>
           </div>
+          
+          {/* Mobile: Show "All Photos" button below main image */}
+          <div className="md:hidden mt-2">
+            <button className="w-full flex items-center justify-center gap-2 py-3 bg-slate-800 text-white rounded-lg font-semibold hover:bg-slate-700 transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm8 2a2 2 0 100 4 2 2 0 000-4z" />
+              </svg>
+              View All Photos ({listing.images.length})
+            </button>
+          </div>
         </div>
 
         {/* ── Two-Column Layout ──────────────────────────────────── */}
-        <div className="flex gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
 
           {/* ── LEFT: Scrollable Content ── */}
-          <div className="flex-[3] min-w-0">
+          <div className="w-full lg:flex-[3] lg:min-w-0">
 
             {/* Care type badges */}
             <div className="flex flex-wrap gap-2 mb-3">
@@ -605,7 +615,7 @@ export default function ListingDetailPage() {
             </div>
 
             {/* Title */}
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">{listing.title}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">{listing.title}</h1>
 
             {/* Address */}
             <div className="flex items-center gap-1.5 text-slate-500 mb-3">
@@ -624,32 +634,32 @@ export default function ListingDetailPage() {
             </div>
 
             {/* Key stats */}
-            <div className="grid grid-cols-4 gap-4 mb-8">
-              <div className="bg-white border border-slate-200 rounded-xl p-4 text-center">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+              <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 text-center">
                 <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Starting at</p>
-                <p className="text-2xl font-bold text-slate-900">${listing.price.toLocaleString()}</p>
+                <p className="text-xl sm:text-2xl font-bold text-slate-900">${listing.price.toLocaleString()}</p>
                 <p className="text-xs text-slate-500 mt-0.5">per month</p>
               </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-4 text-center">
+              <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 text-center">
                 <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Capacity</p>
-                <p className="text-2xl font-bold text-slate-900">{listing.capacity}</p>
+                <p className="text-xl sm:text-2xl font-bold text-slate-900">{listing.capacity}</p>
                 <p className="text-xs text-slate-500 mt-0.5">residents</p>
               </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-4 text-center">
+              <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 text-center">
                 <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Available</p>
-                <p className="text-2xl font-bold text-teal-600">{listing.bedsAvailable}</p>
+                <p className="text-xl sm:text-2xl font-bold text-teal-600">{listing.bedsAvailable}</p>
                 <p className="text-xs text-slate-500 mt-0.5">beds</p>
               </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-4 text-center">
+              <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 text-center">
                 <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Staff Ratio</p>
-                <p className="text-2xl font-bold text-slate-900">{listing.staffRatio}</p>
+                <p className="text-xl sm:text-2xl font-bold text-slate-900">{listing.staffRatio}</p>
                 <p className="text-xs text-slate-500 mt-0.5">nurse:resident</p>
               </div>
             </div>
 
             {/* Contact Information */}
-            <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6">
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">Contact Information</h2>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-6">
+              <h2 className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-4">Contact Information</h2>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -673,12 +683,12 @@ export default function ListingDetailPage() {
             </div>
 
             {/* Certifications & Licenses */}
-            <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                <h2 className="text-lg font-semibold text-slate-900">Certifications & Licenses</h2>
+                <h2 className="text-base sm:text-lg font-semibold text-slate-900">Certifications & Licenses</h2>
               </div>
               <div className="flex flex-wrap gap-2 mb-3">
                 {listing.certifications.map((cert, i) => (
@@ -696,8 +706,8 @@ export default function ListingDetailPage() {
             </div>
 
             {/* Key Details */}
-            <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6">
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">Key Details</h2>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-6">
+              <h2 className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-4">Key Details</h2>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-teal-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -721,22 +731,22 @@ export default function ListingDetailPage() {
             </div>
 
             {/* About This Community */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-slate-900 mb-4">About This Community</h2>
-              <p className="text-slate-700 leading-relaxed mb-4">{listing.description}</p>
+            <div className="mb-6 sm:mb-8">
+              <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-3 sm:mb-4">About This Community</h2>
+              <p className="text-sm sm:text-base text-slate-700 leading-relaxed mb-3 sm:mb-4">{listing.description}</p>
               {listing.descriptionExtra && (
-                <p className="text-slate-700 leading-relaxed">{listing.descriptionExtra}</p>
+                <p className="text-sm sm:text-base text-slate-700 leading-relaxed">{listing.descriptionExtra}</p>
               )}
             </div>
 
             {/* Tabs */}
-            <div className="border-b border-slate-200 mb-6">
-              <div className="flex gap-8">
+            <div className="border-b border-slate-200 mb-4 sm:mb-6 overflow-x-auto">
+              <div className="flex gap-4 sm:gap-6 md:gap-8 min-w-max sm:min-w-0">
                 {(["services", "reviews", "location"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`pb-4 px-1 font-medium text-sm transition-colors ${
+                    className={`pb-3 sm:pb-4 px-1 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
                       activeTab === tab
                         ? "text-teal-600 border-b-2 border-teal-600"
                         : "text-slate-600 hover:text-slate-900"
@@ -755,14 +765,14 @@ export default function ListingDetailPage() {
               <div className="space-y-6">
 
                 {/* Care Services */}
-                <div className="bg-white border border-slate-200 rounded-xl p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6">
+                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
-                    <h3 className="text-base font-semibold text-slate-900">Care Services</h3>
+                    <h3 className="text-sm sm:text-base font-semibold text-slate-900">Care Services</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                     {listing.careServices.map((s, i) => (
                       <div key={i} className="flex items-center gap-2">
                         <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -775,14 +785,14 @@ export default function ListingDetailPage() {
                 </div>
 
                 {/* Amenities */}
-                <div className="bg-white border border-slate-200 rounded-xl p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6">
+                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
-                    <h3 className="text-base font-semibold text-slate-900">Amenities</h3>
+                    <h3 className="text-sm sm:text-base font-semibold text-slate-900">Amenities</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                     {listing.amenities.map((a, i) => (
                       <div key={i} className="flex items-center gap-2">
                         <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -795,14 +805,14 @@ export default function ListingDetailPage() {
                 </div>
 
                 {/* Activities & Programs */}
-                <div className="bg-white border border-slate-200 rounded-xl p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6">
+                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <h3 className="text-base font-semibold text-slate-900">Activities & Programs</h3>
+                    <h3 className="text-sm sm:text-base font-semibold text-slate-900">Activities & Programs</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                     {listing.activities.map((a, i) => (
                       <div key={i} className="flex items-center gap-2">
                         <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -815,12 +825,12 @@ export default function ListingDetailPage() {
                 </div>
 
                 {/* Dining Options */}
-                <div className="bg-white border border-slate-200 rounded-xl p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6">
+                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                     </svg>
-                    <h3 className="text-base font-semibold text-slate-900">Dining Options</h3>
+                    <h3 className="text-sm sm:text-base font-semibold text-slate-900">Dining Options</h3>
                   </div>
                   <div className="space-y-2.5">
                     {listing.diningOptions.map((d, i) => (
@@ -835,14 +845,14 @@ export default function ListingDetailPage() {
                 </div>
 
                 {/* Safety Features */}
-                <div className="bg-white border border-slate-200 rounded-xl p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6">
+                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
-                    <h3 className="text-base font-semibold text-slate-900">Safety Features</h3>
+                    <h3 className="text-sm sm:text-base font-semibold text-slate-900">Safety Features</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                     {listing.safetyFeatures.map((f, i) => (
                       <div key={i} className="flex items-center gap-2">
                         <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -855,8 +865,8 @@ export default function ListingDetailPage() {
                 </div>
 
                 {/* Insurance & Payment Options */}
-                <div className="bg-white border border-slate-200 rounded-xl p-6">
-                  <h3 className="text-base font-semibold text-slate-900 mb-4">Insurance & Payment Options</h3>
+                <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6">
+                  <h3 className="text-sm sm:text-base font-semibold text-slate-900 mb-3 sm:mb-4">Insurance & Payment Options</h3>
                   <div className="flex flex-wrap gap-2">
                     {listing.insuranceAccepted.map((ins, i) => (
                       <span key={i} className="px-4 py-1.5 bg-slate-50 text-slate-700 border border-slate-200 rounded-full text-sm font-medium">
@@ -892,13 +902,13 @@ export default function ListingDetailPage() {
           </div>{/* END left */}
 
           {/* ── RIGHT: Sticky Sidebar ── */}
-          <aside className="w-[416px] shrink-0 self-start sticky top-24">
+          <aside className="w-full lg:w-[416px] shrink-0 self-start lg:sticky lg:top-24">
 
             {/* Pricing Card - 30% Larger Card */}
-            <div className="bg-white border border-slate-200 rounded-xl p-12 mb-4">
-              <p className="text-sm text-slate-500 text-center mb-1">Monthly pricing from</p>
-              <p className="text-4xl font-bold text-slate-900 text-center">${listing.price.toLocaleString()}</p>
-              <p className="text-sm text-slate-500 text-center mb-6">up to ${listing.maxPrice.toLocaleString()}/mo</p>
+            <div className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 md:p-10 lg:p-12 mb-4">
+              <p className="text-xs sm:text-sm text-slate-500 text-center mb-1">Monthly pricing from</p>
+              <p className="text-3xl sm:text-4xl font-bold text-slate-900 text-center">${listing.price.toLocaleString()}</p>
+              <p className="text-xs sm:text-sm text-slate-500 text-center mb-4 sm:mb-6">up to ${listing.maxPrice.toLocaleString()}/mo</p>
 
               <div className="space-y-3">
                 <button
@@ -935,7 +945,7 @@ export default function ListingDetailPage() {
             </div>
 
             {/* Action Buttons - Always Visible */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 mb-4">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 mb-4">
               <div className="flex items-center justify-around">
                 <button className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-slate-900 transition-colors">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -960,8 +970,8 @@ export default function ListingDetailPage() {
 
             {/* Schedule Tour Form - Inline */}
             {scheduleTourOpen && (
-              <div className="bg-white border border-slate-200 rounded-xl p-6 mb-4">
-                <h2 className="text-2xl font-bold text-slate-900 mb-6">Schedule a Tour</h2>
+              <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6 mb-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4 sm:mb-6">Schedule a Tour</h2>
 
                 <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setScheduleTourOpen(false); }}>
                   {/* Preferred Date */}
@@ -1104,8 +1114,8 @@ export default function ListingDetailPage() {
 
             {/* Request Information Form - Inline */}
             {requestInfoOpen && (
-              <div className="bg-white border border-slate-200 rounded-xl p-6 mb-4">
-                <h2 className="text-2xl font-bold text-slate-900 mb-6">Request Information</h2>
+              <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6 mb-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4 sm:mb-6">Request Information</h2>
 
                 <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setRequestInfoOpen(false); }}>
                   {/* Your Name */}
