@@ -7,11 +7,11 @@ import type { ApiListing } from "@/types";
 interface ListingsSectionProps {
   listings: ApiListing[];
   loading: boolean;
-  onImageManage: (listing: ApiListing) => void;
+  onImageManage?: (listing: ApiListing) => void;
   onAddListing?: () => void;
 }
 
-export function ListingsSection({ listings, loading, onImageManage, onAddListing }: ListingsSectionProps) {
+export function ListingsSection({ listings, loading, onAddListing }: ListingsSectionProps) {
   if (loading) return <Loader />;
 
   const activeCount = listings.filter(l => l.status === "ACTIVE").length;
@@ -90,18 +90,12 @@ export function ListingsSection({ listings, loading, onImageManage, onAddListing
                       )}
                     </td>
                     <td className="px-4 sm:px-5 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => onImageManage(l)}
-                          className="text-xs font-medium px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:border-teal-300 hover:text-teal-600 transition-colors"
-                        >
-                          Images
-                        </button>
+                      <div className="flex items-center justify-end">
                         <Link 
                           href={`/providers/listings/${l.id}`} 
                           className="text-xs font-medium px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:border-teal-300 hover:text-teal-600 transition-colors"
                         >
-                          Manage
+                          View
                         </Link>
                       </div>
                     </td>

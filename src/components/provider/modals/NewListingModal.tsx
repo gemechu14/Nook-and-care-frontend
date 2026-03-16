@@ -15,10 +15,20 @@ const CARE_TYPES = [
 interface NewListingModalProps {
   onClose: () => void;
   onCreated: (listing: ApiListing) => void;
+  providerId: string;
 }
 
-export function NewListingModal({ onClose, onCreated }: NewListingModalProps) {
-  const [form, setForm] = useState<Partial<CreateListingRequest>>({ care_type: "ASSISTED_LIVING" });
+const ROOM_TYPES = [
+  { value: "PRIVATE", label: "Private room" },
+  { value: "SEMI_PRIVATE", label: "Semi-private room" },
+  { value: "SHARED", label: "Shared room" },
+] as const;
+
+export function NewListingModal({ onClose, onCreated, providerId }: NewListingModalProps) {
+  const [form, setForm] = useState<Partial<CreateListingRequest>>({
+    care_type: "ASSISTED_LIVING",
+    room_type: "PRIVATE",
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +41,11 @@ export function NewListingModal({ onClose, onCreated }: NewListingModalProps) {
     setSaving(true);
     setError(null);
     try {
-      const listing = await listingsApi.create(form as CreateListingRequest);
+      const payload: CreateListingRequest = {
+        ...(form as CreateListingRequest),
+        provider_id: providerId,
+      };
+      const listing = await listingsApi.create(payload);
       onCreated(listing);
       onClose();
     } catch (err) {
@@ -76,6 +90,20 @@ export function NewListingModal({ onClose, onCreated }: NewListingModalProps) {
                 className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none bg-white"
               >
                 {CARE_TYPES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Room Type *</label>
+              <select
+                value={form.room_type}
+                onChange={f("room_type")}
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none bg-white"
+              >
+                {ROOM_TYPES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div>

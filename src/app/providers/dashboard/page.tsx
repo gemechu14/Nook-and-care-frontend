@@ -165,8 +165,9 @@ export default function ProviderDashboard() {
 
   return (
     <div className="space-y-6">
-      {showNewListing && (
+      {showNewListing && provider && (
         <NewListingModal
+          providerId={provider.id}
           onClose={() => setShowNewListing(false)}
           onCreated={(l) => { 
             setListings((p) => [l, ...p]); 

@@ -18,8 +18,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} bg-white text-slate-900 antialiased`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} bg-white text-slate-900 antialiased`} suppressHydrationWarning>
         <StoreInitializer />
         <ConditionalLayout>{children}</ConditionalLayout>
       </body>

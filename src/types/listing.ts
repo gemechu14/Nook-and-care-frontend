@@ -9,12 +9,15 @@ export type ApiCareType =
   | "ADULT_FAMILY_HOME"
   | "SKILLED_NURSING";
 
+export type ApiRoomType = "PRIVATE" | "SEMI_PRIVATE" | "SHARED";
+
 export interface ApiListing {
   id: string;
   provider_id: string;
   title: string;
   description: string | null;
   care_type: ApiCareType;
+  room_type: ApiRoomType;
   city: string | null;
   state: string | null;
   address: string | null;
@@ -167,9 +170,11 @@ export interface TreatmentService {
 // ─── Request types ────────────────────────────────────────────────────────────
 
 export interface CreateListingRequest {
+  provider_id: string;
   title: string;
   description?: string;
   care_type: ApiCareType;
+  room_type: ApiRoomType;
   city?: string;
   state?: string;
   address?: string;
