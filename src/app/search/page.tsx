@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import ListingCard from "@/components/ui/ListingCard";
 import { listingsApi } from "@/services/listingService";
 import { BASE_URL } from "@/constants/config";
@@ -65,19 +66,75 @@ const availabilityOptions = [
 type SortOption = "highest-rated" | "price-low-high" | "price-high-low" | "most-available";
 
 export default function SearchPage() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchParams = useSearchParams();
+  
+  // Map care type IDs from URL to display names
+  const careTypeMap: Record<string, string> = {
+    "assisted-living": "Assisted Living",
+    "memory-care": "Memory Care",
+    "independent-living": "Independent Living",
+    "adult-family-home": "Adult Family Home",
+    "skilled-nursing": "Skilled Nursing",
+  };
+  
+  // Parse budget from URL (e.g., "1000-2000" or "5000+")
+  const parseBudgetFromUrl = (budgetParam: string | null): number => {
+    if (!budgetParam) return 0;
+    if (budgetParam.includes("+")) {
+      return parseInt(budgetParam.replace("+", "").replace(/,/g, "")) || 0;
+    }
+    const parts = budgetParam.split("-");
+    if (parts.length === 2) {
+      return parseInt(parts[0].replace(/,/g, "")) || 0;
+    }
+    return 0;
+  };
+  
+  // Initialize filters from URL params
+  const getInitialCareLevel = () => {
+    const careParam = searchParams.get("care");
+    if (careParam && careTypeMap[careParam]) {
+      return [careTypeMap[careParam]];
+    }
+    return [];
+  };
+  
+  const getInitialBudget = () => parseBudgetFromUrl(searchParams.get("budget"));
+  const getInitialLocation = () => searchParams.get("location") || "";
+  
+  const [searchQuery, setSearchQuery] = useState(getInitialLocation());
   const [filters, setFilters] = useState<FilterState>({
-    careLevel: [],
-    minBudget: 0,
+    careLevel: getInitialCareLevel(),
+    minBudget: getInitialBudget(),
     maxBudget: 15000, // Keep for compatibility but we'll use minBudget only
     amenities: [],
     certifications: [],
     insurance: [],
     availability: [],
   });
+  
+  // Update filters when URL params change
+  useEffect(() => {
+    const careParam = searchParams.get("care");
+    const budgetParam = searchParams.get("budget");
+    const locationParam = searchParams.get("location");
+    
+    if (careParam || budgetParam || locationParam) {
+      setFilters(prev => ({
+        ...prev,
+        careLevel: careParam && careTypeMap[careParam] ? [careTypeMap[careParam]] : prev.careLevel,
+        minBudget: budgetParam ? parseBudgetFromUrl(budgetParam) : prev.minBudget,
+      }));
+      if (locationParam) {
+        setSearchQuery(locationParam);
+      }
+    }
+  }, [searchParams]);
+  // Expand careLevel section if care type is in URL
+  const hasCareTypeInUrl = !!searchParams.get("care");
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    careLevel: true,
-    budget: true,
+    careLevel: hasCareTypeInUrl || true,
+    budget: !!searchParams.get("budget") || true,
     amenities: false,
     certifications: false,
     insurance: false,

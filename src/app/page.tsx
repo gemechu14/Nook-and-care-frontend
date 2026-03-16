@@ -499,7 +499,11 @@ export default function HomePage() {
                   ...listing,
                   image: (listing as any).primaryImageUrl || "/placeholder-listing.jpg"
                 };
-                return <ListingCard key={listing.id} listing={listingWithImage} />;
+                return (
+                  <div key={listing.id} className="w-full max-w-[400px] mx-auto lg:max-w-none">
+                    <ListingCard listing={listingWithImage} />
+                  </div>
+                );
               })}
             </div>
           )}
