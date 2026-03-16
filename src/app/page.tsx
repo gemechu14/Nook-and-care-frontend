@@ -359,7 +359,7 @@ export default function HomePage() {
     <div className="flex flex-col">
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative h-[80vh] max-h-[8200px] min-h-[580px] flex items-center overflow-hidden bg-slate-700">
+      <section className="relative min-h-[600px] sm:min-h-[650px] md:h-[75vh] lg:h-[80vh] max-h-[900px] flex items-center overflow-hidden bg-slate-700">
         {/* Background image */}
         <div className="absolute inset-0">
           <Image
@@ -373,45 +373,47 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-slate-800/50 to-transparent" />
         </div>
 
-        <div className="relative z-10 px-[144px] pt-16 pb-10 w-full h-full flex flex-col justify-start">
-          <div className="w-3/4">
-            {/* Urgent banner - left aligned */}
-            <div className="flex justify-start mb-6 mt-8">
-              <div className="inline-flex items-center gap-4 bg-yellow-50 px-6 py-3 rounded-xl text-sm font-medium shadow-sm">
-              <svg className="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-              <span className="text-amber-800">Need urgent placement? Call <strong className="font-semibold">1-800-555-0123</strong></span>
+        <div className="relative z-10 px-4 sm:px-6 md:px-8 lg:px-[144px] pt-20 sm:pt-16 md:pt-20 pb-8 sm:pb-10 md:pb-12 w-full h-full flex flex-col justify-center">
+          <div className="w-full max-w-7xl mx-auto lg:mx-0 lg:max-w-none lg:w-auto">
+            {/* Urgent banner - responsive */}
+            <div className="flex justify-start mb-6 sm:mb-6 md:mb-8">
+              <div className="inline-flex items-center gap-2 sm:gap-3 md:gap-4 bg-yellow-50 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium shadow-sm">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                <span className="text-amber-800">
+                  Need urgent placement? Call <strong className="font-semibold">1-800-555-0123</strong>
+                </span>
               </div>
             </div>
 
-            {/* Headline - left aligned */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6 text-left">
+            {/* Headline - responsive */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4 sm:mb-5 md:mb-6 text-left max-w-4xl lg:max-w-3xl">
               Find the right care for your
-              <br />
-              <span className="text-teal-400">loved one</span>
+              <br className="hidden sm:block" />
+              <span className="text-teal-400"> loved one</span>
             </h1>
 
-            <p className="text-base sm:text-lg text-white mb-8 leading-relaxed text-left max-w-lg">
+            <p className="text-sm sm:text-base md:text-lg text-white mb-6 sm:mb-7 md:mb-8 leading-relaxed text-left max-w-2xl lg:max-w-xl">
               We understand this is a big decision. Let us help you find a safe, caring
               community where your family member can thrive.
             </p>
 
-            {/* Search Form - left aligned */}
-            <div className="mb-6 max-w-[38rem]">
+            {/* Search Form - responsive */}
+            <div className="mb-6 sm:mb-8 max-w-full sm:max-w-lg md:max-w-2xl lg:max-w-xl">
               <HomeSearchForm />
             </div>
 
-            {/* Stats - left aligned */}
-            <div className="flex flex-wrap items-center justify-start gap-4 sm:gap-6">
+            {/* Stats - responsive */}
+            <div className="flex flex-wrap items-center justify-start gap-3 sm:gap-4 md:gap-6">
               {[
                 "2,500+ verified communities",
                 "50,000+ family reviews",
                 "Free & confidential",
               ].map((stat) => (
-                <div key={stat} className="flex items-center gap-2 text-white text-sm">
-                  <span className="w-2 h-2 rounded-full bg-teal-400 shrink-0" />
-                  {stat}
+                <div key={stat} className="flex items-center gap-1.5 sm:gap-2 text-white text-xs sm:text-sm">
+                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-teal-400 shrink-0" />
+                  <span className="whitespace-nowrap">{stat}</span>
                 </div>
               ))}
             </div>
@@ -420,30 +422,30 @@ export default function HomePage() {
       </section>
 
       {/* ── Care Types ───────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-slate-50">
+      <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-slate-50">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
+          <div className="text-center mb-8 sm:mb-10 md:mb-14">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-3 sm:mb-4">
               What type of care are you looking for?
             </h2>
-            <p className="text-slate-500 text-lg max-w-2xl mx-auto">
+            <p className="text-slate-500 text-base sm:text-lg max-w-2xl mx-auto px-4">
               Each person has unique needs. Understanding the right level of care is the first step
               in finding the perfect community.
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-5 md:gap-6">
             {careTypes.map((care) => (
               <Link
                 key={care.id}
                 href={`/search?care=${care.id}`}
-                className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-md hover:border-teal-200 transition-all group"
+                className="bg-white rounded-xl border border-slate-200 p-5 sm:p-6 hover:shadow-md hover:border-teal-200 transition-all group"
               >
-                <div className={`w-12 h-12 rounded-xl ${care.iconBg} ${care.iconColor} flex items-center justify-center mb-4`}>
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${care.iconBg} ${care.iconColor} flex items-center justify-center mb-3 sm:mb-4`}>
                   {care.icon}
                 </div>
-                <h3 className="font-semibold text-slate-900 mb-2">{care.label}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed mb-4">{care.description}</p>
+                <h3 className="font-semibold text-slate-900 mb-2 text-base sm:text-lg">{care.label}</h3>
+                <p className="text-slate-500 text-sm leading-relaxed mb-3 sm:mb-4">{care.description}</p>
                 <span className="text-teal-600 text-sm font-medium group-hover:underline">
                   Explore →
                 </span>
@@ -454,29 +456,29 @@ export default function HomePage() {
       </section>
 
       {/* ── Featured Communities ─────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-white">
+      <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-end justify-between mb-10">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-8 sm:mb-10 gap-4">
             <div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-2">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2">
                 Featured Communities
               </h2>
-              <p className="text-slate-500">Highly-rated communities trusted by families like yours</p>
+              <p className="text-slate-500 text-sm sm:text-base">Highly-rated communities trusted by families like yours</p>
             </div>
             <Link
               href="/search"
-              className="hidden sm:flex items-center gap-2 border border-teal-600 text-teal-600 px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-teal-50 transition-colors"
+              className="inline-flex items-center justify-center gap-2 border border-teal-600 text-teal-600 px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-teal-50 transition-colors self-start sm:self-auto"
             >
               View all communities →
             </Link>
           </div>
 
           {listingsLoading ? (
-            <div className="flex items-center justify-center py-20">
+            <div className="flex items-center justify-center py-12 sm:py-16 md:py-20">
               <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : listingsError ? (
-            <div className="text-center py-20">
+            <div className="text-center py-12 sm:py-16 md:py-20">
               <p className="text-slate-600 mb-4">{listingsError}</p>
               <button
                 onClick={() => window.location.reload()}
@@ -486,11 +488,11 @@ export default function HomePage() {
               </button>
             </div>
           ) : featuredListings.length === 0 ? (
-            <div className="text-center py-20">
+            <div className="text-center py-12 sm:py-16 md:py-20">
               <p className="text-slate-600">No featured communities available at this time.</p>
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
               {featuredListings.map((listing) => {
                 // Transform ApiListing to include image for ListingCard
                 const listingWithImage = {
@@ -501,53 +503,44 @@ export default function HomePage() {
               })}
             </div>
           )}
-
-          <div className="sm:hidden mt-6 text-center">
-            <Link
-              href="/search"
-              className="inline-flex items-center gap-2 border border-teal-600 text-teal-600 px-6 py-3 rounded-lg font-medium hover:bg-teal-50 transition-colors"
-            >
-              View all communities →
-            </Link>
-          </div>
         </div>
       </section>
 
       {/* ── How to Choose ────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-slate-50">
+      <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-slate-50">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
+          <div className="text-center mb-8 sm:mb-10 md:mb-14">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-3 sm:mb-4">
               How to Choose the Right Community
             </h2>
-            <p className="text-slate-500 text-lg max-w-2xl mx-auto">
+            <p className="text-slate-500 text-base sm:text-lg max-w-2xl mx-auto px-4">
               Finding care for a loved one can feel overwhelming. Follow these steps to make
               the process easier and more informed.
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6 mb-8 sm:mb-10 md:mb-12">
             {howToSteps.map((step) => (
-              <div key={step.step} className="relative bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+              <div key={step.step} className="relative bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-sm">
                 {/* Step number */}
-                <div className="absolute -top-4 left-5 w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                <div className="absolute -top-3 sm:-top-4 left-4 sm:left-5 w-7 h-7 sm:w-8 sm:h-8 bg-teal-600 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-bold">
                   {step.step}
                 </div>
-                <div className="mt-2 mb-4">{step.icon}</div>
-                <h3 className="font-semibold text-slate-900 text-lg mb-2">{step.title}</h3>
+                <div className="mt-1 sm:mt-2 mb-3 sm:mb-4">{step.icon}</div>
+                <h3 className="font-semibold text-slate-900 text-base sm:text-lg mb-2">{step.title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">{step.description}</p>
               </div>
             ))}
           </div>
 
-          <div className="text-center">
+          <div className="text-center px-4">
             <Link
               href="/assessment"
-              className="inline-flex items-center gap-2 bg-teal-600 text-white px-8 py-3.5 rounded-xl font-semibold hover:bg-teal-700 transition-colors text-lg"
+              className="inline-flex items-center gap-2 bg-teal-600 text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl font-semibold hover:bg-teal-700 transition-colors text-base sm:text-lg"
             >
               Start Care Assessment →
             </Link>
-            <p className="text-slate-400 text-sm mt-3">
+            <p className="text-slate-400 text-xs sm:text-sm mt-3">
               Free · Takes about 5 minutes · Get personalized recommendations
             </p>
           </div>
@@ -555,15 +548,15 @@ export default function HomePage() {
       </section>
 
       {/* ── Trust Badges ─────────────────────────────────────────────────── */}
-      <section className="py-16 px-4 bg-white border-t border-slate-100">
+      <section className="py-12 sm:py-14 md:py-16 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7 md:gap-8">
             {trustBadges.map((badge) => (
-              <div key={badge.title} className="flex items-start gap-4">
+              <div key={badge.title} className="flex items-start gap-3 sm:gap-4">
                 <div className="shrink-0 mt-1">{badge.icon}</div>
                 <div>
-                  <h4 className="font-semibold text-slate-800 mb-1">{badge.title}</h4>
-                  <p className="text-slate-500 text-sm leading-relaxed">{badge.description}</p>
+                  <h4 className="font-semibold text-slate-800 mb-1 text-sm sm:text-base">{badge.title}</h4>
+                  <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">{badge.description}</p>
                 </div>
               </div>
             ))}
@@ -572,30 +565,30 @@ export default function HomePage() {
       </section>
 
       {/* ── Create Account ───────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-teal-50/40">
+      <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-teal-50/40">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden grid md:grid-cols-2">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden grid md:grid-cols-2">
             {/* Left panel */}
-            <div className="p-8 lg:p-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-teal-600 rounded-xl flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-6 sm:p-8 lg:p-10">
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-teal-600 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-slate-900">Create Your Free Account</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Create Your Free Account</h2>
               </div>
-              <p className="text-slate-500 mb-8">
+              <p className="text-slate-500 mb-6 sm:mb-8 text-sm sm:text-base">
                 Sign in to access personalized features and make your search easier
               </p>
 
-              <ul className="space-y-5 mb-8">
+              <ul className="space-y-4 sm:space-y-5 mb-6 sm:mb-8">
                 {accountFeatures.map((feature) => (
                   <li key={feature.title} className="flex items-start gap-3">
                     <div className="shrink-0 mt-0.5">{feature.icon}</div>
                     <div>
-                      <p className="font-medium text-slate-800">{feature.title}</p>
-                      <p className="text-slate-500 text-sm">{feature.description}</p>
+                      <p className="font-medium text-slate-800 text-sm sm:text-base">{feature.title}</p>
+                      <p className="text-slate-500 text-xs sm:text-sm">{feature.description}</p>
                     </div>
                   </li>
                 ))}
@@ -603,17 +596,17 @@ export default function HomePage() {
 
               <Link
                 href="/register"
-                className="block w-full bg-teal-600 text-white text-center py-3.5 rounded-xl font-semibold hover:bg-teal-700 transition-colors"
+                className="block w-full bg-teal-600 text-white text-center py-3 sm:py-3.5 rounded-xl font-semibold hover:bg-teal-700 transition-colors text-sm sm:text-base"
               >
                 Sign In or Create Account
               </Link>
-              <p className="text-center text-slate-400 text-sm mt-3">
+              <p className="text-center text-slate-400 text-xs sm:text-sm mt-3">
                 Free forever. No credit card required.
               </p>
             </div>
 
             {/* Right panel — image */}
-            <div className="relative hidden md:block">
+            <div className="relative hidden md:block min-h-[300px] lg:min-h-[400px]">
               <Image
                 src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80"
                 alt="Caregiver and senior"
@@ -621,9 +614,9 @@ export default function HomePage() {
                 className="object-cover"
               />
               <div className="absolute inset-0 bg-teal-900/30" />
-              <div className="absolute bottom-8 left-8 right-8 text-white">
-                <p className="text-xl font-bold">Join 50,000+ families</p>
-                <p className="text-teal-200 text-sm">Finding the right care for their loved ones</p>
+              <div className="absolute bottom-6 sm:bottom-8 left-6 sm:left-8 right-6 sm:right-8 text-white">
+                <p className="text-lg sm:text-xl font-bold">Join 50,000+ families</p>
+                <p className="text-teal-200 text-xs sm:text-sm">Finding the right care for their loved ones</p>
               </div>
             </div>
           </div>
@@ -631,26 +624,26 @@ export default function HomePage() {
       </section>
 
       {/* ── For Facility Owners ──────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-white">
+      <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto text-center">
-          <span className="inline-flex items-center gap-2 bg-teal-50 text-teal-700 border border-teal-200 px-4 py-1.5 rounded-full text-sm font-medium mb-6">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <span className="inline-flex items-center gap-2 bg-teal-50 text-teal-700 border border-teal-200 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium mb-4 sm:mb-6">
+            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
             For Facility Owners
           </span>
 
-          <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-14 max-w-2xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-8 sm:mb-10 md:mb-14 max-w-2xl mx-auto px-4">
             Connect with families searching for quality care
           </h2>
 
-          <div className="grid sm:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 mb-8 sm:mb-10 md:mb-12">
             {providerFeatures.map((feature) => (
-              <div key={feature.title} className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-                <div className={`w-14 h-14 rounded-xl ${feature.iconBg} flex items-center justify-center mx-auto mb-5`}>
+              <div key={feature.title} className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${feature.iconBg} flex items-center justify-center mx-auto mb-4 sm:mb-5`}>
                   {feature.icon}
                 </div>
-                <h3 className="font-semibold text-slate-900 text-lg mb-2">{feature.title}</h3>
+                <h3 className="font-semibold text-slate-900 text-base sm:text-lg mb-2">{feature.title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">{feature.description}</p>
               </div>
             ))}
@@ -658,11 +651,11 @@ export default function HomePage() {
 
           <Link
             href="/providers/register"
-            className="inline-flex items-center gap-2 bg-teal-600 text-white px-10 py-4 rounded-xl font-semibold hover:bg-teal-700 transition-colors text-lg"
+            className="inline-flex items-center gap-2 bg-teal-600 text-white px-6 sm:px-8 md:px-10 py-3 sm:py-3.5 md:py-4 rounded-xl font-semibold hover:bg-teal-700 transition-colors text-base sm:text-lg"
           >
             List Your Facility →
           </Link>
-          <p className="text-slate-400 text-sm mt-3">
+          <p className="text-slate-400 text-xs sm:text-sm mt-3 px-4">
             Contact us at{" "}
             <a href="mailto:partners@nook.care" className="text-teal-600 hover:underline">
               partners@nook.care
@@ -673,30 +666,30 @@ export default function HomePage() {
       </section>
 
       {/* ── Resources ────────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-slate-50">
+      <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-slate-50">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-start">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-start">
             {/* Left */}
             <div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-3 sm:mb-4">
                 Resources to Help You Decide
               </h2>
-              <p className="text-slate-500 mb-8 text-lg">
+              <p className="text-slate-500 mb-6 sm:mb-8 text-base sm:text-lg">
                 Making this decision is easier when you have the right information. We&apos;ve created
                 guides, tools, and resources to support you.
               </p>
 
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {resources.map((resource) => (
                   <Link
                     key={resource.title}
                     href={resource.href}
-                    className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md hover:border-teal-200 transition-all flex gap-4"
+                    className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 hover:shadow-md hover:border-teal-200 transition-all flex gap-3 sm:gap-4"
                   >
                     <div className="shrink-0 mt-0.5">{resource.icon}</div>
                     <div>
-                      <h4 className="font-semibold text-slate-800 mb-1">{resource.title}</h4>
-                      <p className="text-slate-500 text-sm leading-relaxed">{resource.description}</p>
+                      <h4 className="font-semibold text-slate-800 mb-1 text-sm sm:text-base">{resource.title}</h4>
+                      <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">{resource.description}</p>
                     </div>
                   </Link>
                 ))}
@@ -704,41 +697,41 @@ export default function HomePage() {
             </div>
 
             {/* Right — Urgent Assistance */}
-            <div className="bg-teal-700 rounded-2xl p-8 text-white">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-teal-600 rounded-xl flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-teal-700 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white">
+              <div className="flex items-center gap-3 mb-3 sm:mb-4">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-teal-600 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
                 </div>
-                <p className="text-teal-200 text-sm">Need help now?</p>
+                <p className="text-teal-200 text-xs sm:text-sm">Need help now?</p>
               </div>
-              <h3 className="text-2xl font-bold mb-4">Urgent Placement Assistance</h3>
-              <p className="text-teal-100 leading-relaxed mb-6">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Urgent Placement Assistance</h3>
+              <p className="text-teal-100 leading-relaxed mb-5 sm:mb-6 text-sm sm:text-base">
                 If you&apos;re facing an urgent situation—hospital discharge, sudden care needs, or
                 safety concerns—our team is here to help you find placement quickly.
               </p>
 
               <a
                 href="tel:18005550123"
-                className="flex items-center justify-center gap-2 bg-white text-teal-700 w-full py-3.5 rounded-xl font-semibold hover:bg-teal-50 transition-colors mb-4"
+                className="flex items-center justify-center gap-2 bg-white text-teal-700 w-full py-3 sm:py-3.5 rounded-xl font-semibold hover:bg-teal-50 transition-colors mb-4 text-sm sm:text-base"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
                 Call 1-800-555-0123
               </a>
-              <p className="text-center text-teal-200 text-sm mb-8">
+              <p className="text-center text-teal-200 text-xs sm:text-sm mb-6 sm:mb-8">
                 Available 24/7 · Free & Confidential
               </p>
 
               <div>
-                <p className="font-semibold mb-3">Financial Assistance</p>
+                <p className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base">Financial Assistance</p>
                 <div className="flex flex-wrap gap-2">
                   {["Medicare", "Medicaid", "VA Benefits", "Long-term Care Insurance"].map((tag) => (
                     <span
                       key={tag}
-                      className="bg-teal-600 text-teal-100 text-sm px-3 py-1 rounded-full"
+                      className="bg-teal-600 text-teal-100 text-xs sm:text-sm px-2.5 sm:px-3 py-1 rounded-full"
                     >
                       {tag}
                     </span>

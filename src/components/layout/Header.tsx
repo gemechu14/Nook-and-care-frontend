@@ -172,10 +172,12 @@ export default function Header() {
   const showLoading = loading && hasToken;
   const [isScrolled, setIsScrolled] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showProviderModal, setShowProviderModal] = useState(false);
   const [hasProvider, setHasProvider] = useState(false);
   const [checkingProvider, setCheckingProvider] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   
   const isSearchPage = pathname === "/search";
   const isListingPage = pathname?.startsWith("/listings/");
@@ -237,6 +239,9 @@ export default function Header() {
     function handleClick(e: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+        setMobileMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClick);
@@ -371,85 +376,87 @@ export default function Header() {
             )}
 
          
-            {/* Auth Section */}
-            {showLoading ? (
-              <div className="w-[80px] h-9 flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : (
-              <>
-                {user ? (
-                  <div className="relative" ref={userMenuRef}>
-                    <button onClick={() => setUserMenuOpen((o) => !o)}
-                      className="flex items-center gap-2 focus:outline-none" aria-label="User menu">
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold select-none ${
-                        role === "ADMIN" ? "bg-purple-600" : role === "PROVIDER" ? "bg-blue-600" : "bg-teal-600"
-                      }`}>
-                        {initials}
-                      </div>
-                      <svg className={`w-4 h-4 ${iconColor} transition-transform ${userMenuOpen ? "rotate-180" : ""}`}
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-
-                    {userMenuOpen && (
-                      <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50">
-                        <div className="px-4 py-3 border-b border-slate-100">
-                          <p className="text-sm font-semibold text-slate-900 truncate">{user.full_name}</p>
-                          <p className="text-xs text-slate-500 truncate">{user.email}</p>
-                          <span className={`inline-block mt-1 text-xs rounded-full px-2 py-0.5 font-medium ${
-                            role === "ADMIN" ? "bg-purple-100 text-purple-700" :
-                            role === "PROVIDER" ? "bg-blue-100 text-blue-700" :
-                            "bg-teal-100 text-teal-700"
-                          }`}>
-                            {role === "ADMIN" ? "Administrator" : role === "PROVIDER" ? "Provider" : role === "SENIOR" ? "Senior" : "Family Member"}
-                          </span>
+            {/* Auth Section - Hidden on mobile, shown in mobile menu */}
+            <div className="hidden md:block">
+              {showLoading ? (
+                <div className="w-[80px] h-9 flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <>
+                  {user ? (
+                    <div className="relative" ref={userMenuRef}>
+                      <button onClick={() => setUserMenuOpen((o) => !o)}
+                        className="flex items-center gap-2 focus:outline-none" aria-label="User menu">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold select-none ${
+                          role === "ADMIN" ? "bg-purple-600" : role === "PROVIDER" ? "bg-blue-600" : "bg-teal-600"
+                        }`}>
+                          {initials}
                         </div>
-                        <Link href={role === "ADMIN" ? "/admin" : role === "PROVIDER" ? "/providers/dashboard" : "/dashboard"}
-                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                          onClick={() => setUserMenuOpen(false)}>
-                          <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
-                          </svg>
-                          Dashboard
-                        </Link>
-                        <Link href="/profile"
-                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                          onClick={() => setUserMenuOpen(false)}>
-                          <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          Profile
-                        </Link>
-                        {/* Hide logout for admin users - they have it in the sidebar */}
-                        {role !== "ADMIN" && (
-                          <div className="border-t border-slate-100 mt-1">
-                            <button onClick={handleLogout}
-                              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                              </svg>
-                              Sign out
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <Link href="/login" className={signInButtonClasses}>
-                    Sign In
-                  </Link>
-                )}
-              </>
-            )}
+                        <svg className={`w-4 h-4 ${iconColor} transition-transform ${userMenuOpen ? "rotate-180" : ""}`}
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
 
-            {/* I'm a Provider button for FAMILY/SENIOR users - after avatar (rightmost) */}
+                      {userMenuOpen && (
+                        <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50">
+                          <div className="px-4 py-3 border-b border-slate-100">
+                            <p className="text-sm font-semibold text-slate-900 truncate">{user.full_name}</p>
+                            <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                            <span className={`inline-block mt-1 text-xs rounded-full px-2 py-0.5 font-medium ${
+                              role === "ADMIN" ? "bg-purple-100 text-purple-700" :
+                              role === "PROVIDER" ? "bg-blue-100 text-blue-700" :
+                              "bg-teal-100 text-teal-700"
+                            }`}>
+                              {role === "ADMIN" ? "Administrator" : role === "PROVIDER" ? "Provider" : role === "SENIOR" ? "Senior" : "Family Member"}
+                            </span>
+                          </div>
+                          <Link href={role === "ADMIN" ? "/admin" : role === "PROVIDER" ? "/providers/dashboard" : "/dashboard"}
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                            onClick={() => setUserMenuOpen(false)}>
+                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
+                            </svg>
+                            Dashboard
+                          </Link>
+                          <Link href="/profile"
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                            onClick={() => setUserMenuOpen(false)}>
+                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Profile
+                          </Link>
+                          {/* Hide logout for admin users - they have it in the sidebar */}
+                          {role !== "ADMIN" && (
+                            <div className="border-t border-slate-100 mt-1">
+                              <button onClick={handleLogout}
+                                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Sign out
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Link href="/login" className={signInButtonClasses}>
+                      Sign In
+                    </Link>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* I'm a Provider button for FAMILY/SENIOR users - Hidden on mobile */}
             {!loading && user && isFamily && !hasProvider && (
               <button 
                 onClick={() => setShowProviderModal(true)}
-                className={`flex items-center gap-2 ${isWhiteHeader 
+                className={`hidden md:flex items-center gap-2 ${isWhiteHeader 
                   ? "bg-white border border-slate-300 text-slate-900 hover:bg-slate-50" 
                   : "bg-white/95 backdrop-blur-sm border border-white/30 text-slate-900 hover:bg-white"
                 } px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm`}
@@ -464,14 +471,141 @@ export default function Header() {
               </button>
             )}
 
-          {/* Mobile menu */}
-          <button className={`md:hidden ${textColor}`}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+          {/* Mobile menu button */}
+          <button 
+            onClick={() => setMobileMenuOpen((o) => !o)}
+            className={`md:hidden ${textColor} focus:outline-none`}
+            aria-label="Mobile menu"
+          >
+            {mobileMenuOpen ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
           </button>
         </div>
       </nav>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div 
+          ref={mobileMenuRef}
+          className={`md:hidden absolute top-16 left-0 right-0 z-40 ${
+            isWhiteHeader ? "bg-white border-b border-slate-200" : "bg-slate-900/95 backdrop-blur-sm"
+          } shadow-lg`}
+        >
+          <div className="px-6 py-4 space-y-1">
+            {/* Navigation Links */}
+            {navItems.map(({ label, href }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-4 py-3 rounded-lg font-medium transition-colors ${
+                  isWhiteHeader 
+                    ? "text-slate-900 hover:bg-slate-50" 
+                    : "text-white hover:bg-slate-800"
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+
+            {/* Divider */}
+            <div className={`my-2 ${isWhiteHeader ? "border-slate-200" : "border-slate-700"} border-t`} />
+
+            {/* Auth Section for Mobile */}
+            {showLoading ? (
+              <div className="px-4 py-3 flex items-center justify-center">
+                <div className={`w-5 h-5 border-2 ${isWhiteHeader ? "border-slate-300" : "border-slate-400"} border-t-transparent rounded-full animate-spin`} />
+              </div>
+            ) : (
+              <>
+                {user ? (
+                  <>
+                    <div className={`px-4 py-3 ${isWhiteHeader ? "bg-slate-50" : "bg-slate-800"} rounded-lg mb-2`}>
+                      <p className={`text-sm font-semibold ${isWhiteHeader ? "text-slate-900" : "text-white"}`}>{user.full_name}</p>
+                      <p className={`text-xs ${isWhiteHeader ? "text-slate-500" : "text-slate-400"}`}>{user.email}</p>
+                    </div>
+                    <Link
+                      href={role === "ADMIN" ? "/admin" : role === "PROVIDER" ? "/providers/dashboard" : "/dashboard"}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`block px-4 py-3 rounded-lg font-medium transition-colors ${
+                        isWhiteHeader 
+                          ? "text-slate-900 hover:bg-slate-50" 
+                          : "text-white hover:bg-slate-800"
+                      }`}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      href="/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`block px-4 py-3 rounded-lg font-medium transition-colors ${
+                        isWhiteHeader 
+                          ? "text-slate-900 hover:bg-slate-50" 
+                          : "text-white hover:bg-slate-800"
+                      }`}
+                    >
+                      Profile
+                    </Link>
+                    {role !== "ADMIN" && (
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                          isWhiteHeader 
+                            ? "text-red-600 hover:bg-red-50" 
+                            : "text-red-400 hover:bg-slate-800"
+                        }`}
+                      >
+                        Sign out
+                      </button>
+                    )}
+                    {/* I'm a Provider button for mobile */}
+                    {isFamily && !hasProvider && (
+                      <>
+                        <div className={`my-2 ${isWhiteHeader ? "border-slate-200" : "border-slate-700"} border-t`} />
+                        <button
+                          onClick={() => {
+                            setShowProviderModal(true);
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                            isWhiteHeader 
+                              ? "text-slate-900 hover:bg-slate-50" 
+                              : "text-white hover:bg-slate-800"
+                          }`}
+                        >
+                          I&apos;m a Provider
+                        </button>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block px-4 py-3 rounded-lg font-medium text-center transition-colors ${
+                      isWhiteHeader
+                        ? "bg-teal-600 text-white hover:bg-teal-700"
+                        : "bg-white text-slate-900 hover:bg-slate-100"
+                    }`}
+                  >
+                    Sign In
+                  </Link>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </header>
     </>
   );
