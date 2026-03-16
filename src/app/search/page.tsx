@@ -88,6 +88,7 @@ export default function SearchPage() {
   const [listings, setListings] = useState<ApiListing[]>([]);
   const [listingsLoading, setListingsLoading] = useState(true);
   const [listingsError, setListingsError] = useState<string | null>(null);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
@@ -360,21 +361,40 @@ export default function SearchPage() {
     <div className="min-h-screen bg-white pt-16">
       {/* Search Bar Section */}
       <div className="bg-white border-b border-slate-200">
-        <div className="px-[144px] py-6">
-          <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+        <div className="px-4 sm:px-6 md:px-8 lg:px-[144px] py-4 sm:py-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* Mobile Filter Button */}
+            <button
+              onClick={() => setMobileFiltersOpen(true)}
+              className="lg:hidden flex items-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors shrink-0"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
+              Filters
+              {activeFilters.length > 0 && (
+                <span className="bg-teal-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                  {activeFilters.length}
+                </span>
+              )}
+            </button>
+
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <div className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Search by city, state, or ZIP code..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-sm sm:text-base"
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Search by city, state, or ZIP code..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-            />
           </div>
 
           {/* Active Filters */}
@@ -383,14 +403,14 @@ export default function SearchPage() {
               {activeFilters.map((filter, index) => (
                 <span
                   key={index}
-                  className="inline-flex items-center gap-2 bg-teal-50 text-teal-700 border border-teal-200 px-3 py-1.5 rounded-full text-sm font-medium"
+                  className="inline-flex items-center gap-1.5 sm:gap-2 bg-teal-50 text-teal-700 border border-teal-200 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium"
                 >
                   {filter.label}
                   <button
                     onClick={() => removeFilter(filter.category, filter.value)}
                     className="hover:text-teal-900 transition-colors"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -398,7 +418,7 @@ export default function SearchPage() {
               ))}
               <button
                 onClick={resetFilters}
-                className="text-slate-600 hover:text-slate-900 text-sm font-medium underline"
+                className="text-slate-600 hover:text-slate-900 text-xs sm:text-sm font-medium underline"
               >
                 Clear all
               </button>
@@ -408,33 +428,33 @@ export default function SearchPage() {
       </div>
 
       {/* Main Content */}
-      <div className="px-[144px] py-8">
-        <div className="flex gap-8">
-          {/* Filters Sidebar */}
-          <aside className="w-80 shrink-0">
-            <div className="bg-white border border-slate-200 rounded-lg p-6 sticky top-24">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-slate-900">Filters</h2>
+      <div className="px-4 sm:px-6 md:px-8 lg:px-[144px] py-4 sm:py-6 md:py-8">
+        <div className="flex gap-4 sm:gap-6 md:gap-8">
+          {/* Filters Sidebar - Desktop */}
+          <aside className="hidden lg:block w-80 shrink-0">
+            <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 md:p-6 sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4 sm:mb-5 md:mb-6">
+                <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Filters</h2>
                 {activeFilters.length > 0 && (
                   <button
                     onClick={resetFilters}
-                    className="text-sm text-teal-600 hover:text-teal-700 font-medium"
+                    className="text-xs sm:text-sm text-teal-600 hover:text-teal-700 font-medium"
                   >
                     Reset Filters
                   </button>
                 )}
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-5 md:space-y-6">
                 {/* Care Level */}
                 <div>
                   <button
                     onClick={() => toggleSection("careLevel")}
-                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-3"
+                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base"
                   >
                     <span>Care Level</span>
                     <svg
-                      className={`w-5 h-5 transition-transform ${expandedSections.careLevel ? "rotate-180" : ""}`}
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${expandedSections.careLevel ? "rotate-180" : ""}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -463,11 +483,11 @@ export default function SearchPage() {
                 <div>
                   <button
                     onClick={() => toggleSection("budget")}
-                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-3"
+                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base"
                   >
                     <span>Monthly Budget</span>
                     <svg
-                      className={`w-5 h-5 transition-transform ${expandedSections.budget ? "rotate-180" : ""}`}
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${expandedSections.budget ? "rotate-180" : ""}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -503,11 +523,11 @@ export default function SearchPage() {
                 <div>
                   <button
                     onClick={() => toggleSection("amenities")}
-                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-3"
+                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base"
                   >
                     <span>Amenities</span>
                     <svg
-                      className={`w-5 h-5 transition-transform ${expandedSections.amenities ? "rotate-180" : ""}`}
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${expandedSections.amenities ? "rotate-180" : ""}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -536,11 +556,11 @@ export default function SearchPage() {
                 <div>
                   <button
                     onClick={() => toggleSection("certifications")}
-                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-3"
+                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base"
                   >
                     <span>Certifications</span>
                     <svg
-                      className={`w-5 h-5 transition-transform ${expandedSections.certifications ? "rotate-180" : ""}`}
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${expandedSections.certifications ? "rotate-180" : ""}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -569,11 +589,11 @@ export default function SearchPage() {
                 <div>
                   <button
                     onClick={() => toggleSection("insurance")}
-                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-3"
+                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base"
                   >
                     <span>Insurance Accepted</span>
                     <svg
-                      className={`w-5 h-5 transition-transform ${expandedSections.insurance ? "rotate-180" : ""}`}
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${expandedSections.insurance ? "rotate-180" : ""}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -602,11 +622,11 @@ export default function SearchPage() {
                 <div>
                   <button
                     onClick={() => toggleSection("availability")}
-                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-3"
+                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base"
                   >
                     <span>Availability</span>
                     <svg
-                      className={`w-5 h-5 transition-transform ${expandedSections.availability ? "rotate-180" : ""}`}
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${expandedSections.availability ? "rotate-180" : ""}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -632,12 +652,12 @@ export default function SearchPage() {
                 </div>
 
                 {/* Reset Filters Button */}
-                <div className="pt-4 border-t border-slate-200">
+                <div className="pt-3 sm:pt-4 border-t border-slate-200">
                   <button
                     onClick={resetFilters}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium rounded-lg transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium rounded-lg transition-colors text-sm"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                     Reset Filters
@@ -648,18 +668,18 @@ export default function SearchPage() {
           </aside>
 
           {/* Listings Area */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {/* Results Header */}
-            <div className="flex items-center justify-between mb-6">
-              <p className="text-slate-600">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <p className="text-sm sm:text-base text-slate-600">
                 {filteredAndSortedListings.length} {filteredAndSortedListings.length === 1 ? "community" : "communities"} found
               </p>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4">
                 {/* Sort Dropdown */}
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                  className="px-3 sm:px-4 py-2 border border-slate-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none flex-1 sm:flex-none"
                 >
                   <option value="highest-rated">Highest Rated</option>
                   <option value="price-low-high">Price: Low to High</option>
@@ -667,21 +687,21 @@ export default function SearchPage() {
                   <option value="most-available">Most Available</option>
                 </select>
 
-                {/* View Toggle */}
-                <div className="flex items-center gap-1 border border-slate-300 rounded-lg p-1">
+                {/* View Toggle - Hidden on mobile */}
+                <div className="hidden sm:flex items-center gap-1 border border-slate-300 rounded-lg p-1">
                   <button
                     onClick={() => setViewMode("grid")}
-                    className={`p-2 rounded ${viewMode === "grid" ? "bg-teal-600 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+                    className={`p-1.5 sm:p-2 rounded ${viewMode === "grid" ? "bg-teal-600 text-white" : "text-slate-600 hover:bg-slate-50"}`}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
                   </button>
                   <button
                     onClick={() => setViewMode("list")}
-                    className={`p-2 rounded ${viewMode === "list" ? "bg-teal-600 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+                    className={`p-1.5 sm:p-2 rounded ${viewMode === "list" ? "bg-teal-600 text-white" : "text-slate-600 hover:bg-slate-50"}`}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                   </button>
@@ -691,27 +711,27 @@ export default function SearchPage() {
 
             {/* Listings Grid */}
             {listingsLoading ? (
-              <div className="flex items-center justify-center py-20">
+              <div className="flex items-center justify-center py-12 sm:py-16 md:py-20">
                 <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : listingsError ? (
-              <div className="text-center py-20">
-                <p className="text-slate-600 mb-4">{listingsError}</p>
+              <div className="text-center py-12 sm:py-16 md:py-20">
+                <p className="text-slate-600 mb-4 text-sm sm:text-base">{listingsError}</p>
                 <button
                   onClick={() => window.location.reload()}
-                  className="text-teal-600 hover:text-teal-700 font-medium"
+                  className="text-teal-600 hover:text-teal-700 font-medium text-sm sm:text-base"
                 >
                   Try again
                 </button>
               </div>
             ) : filteredAndSortedListings.length === 0 ? (
-              <div className="text-center py-20">
-                <p className="text-slate-600 mb-2">
+              <div className="text-center py-12 sm:py-16 md:py-20">
+                <p className="text-slate-600 mb-2 text-sm sm:text-base">
                   {activeFilters.length > 0 || searchQuery.trim() 
                     ? "No communities found matching your criteria."
                     : "No communities found."}
                 </p>
-                <p className="text-slate-500 text-sm">
+                <p className="text-slate-500 text-xs sm:text-sm">
                   {activeFilters.length > 0 || searchQuery.trim()
                     ? "Try adjusting your filters or search terms."
                     : "There are currently no active listings available."}
@@ -719,14 +739,14 @@ export default function SearchPage() {
                 {(activeFilters.length > 0 || searchQuery.trim()) && (
                   <button
                     onClick={resetFilters}
-                    className="mt-4 text-teal-600 hover:text-teal-700 font-medium"
+                    className="mt-4 text-teal-600 hover:text-teal-700 font-medium text-sm sm:text-base"
                   >
                     Clear all filters
                   </button>
                 )}
               </div>
             ) : (
-              <div className={viewMode === "grid" ? "grid grid-cols-2 gap-6" : "space-y-6"}>
+              <div className={viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6" : "space-y-4 sm:space-y-5 md:space-y-6"}>
                 {filteredAndSortedListings.map((listing) => {
                   // Transform ApiListing to include image for ListingCard
                   const listingWithImage = {
@@ -740,6 +760,254 @@ export default function SearchPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile Filters Drawer */}
+      {mobileFiltersOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setMobileFiltersOpen(false)}
+          />
+          
+          {/* Drawer */}
+          <aside className="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-white z-50 lg:hidden shadow-2xl overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-4 sm:px-5 md:px-6 py-4 flex items-center justify-between">
+              <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Filters</h2>
+              <button
+                onClick={() => setMobileFiltersOpen(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-4 sm:p-5 md:p-6">
+              <div className="space-y-4 sm:space-y-5 md:space-y-6">
+                {/* Care Level */}
+                <div>
+                  <button
+                    onClick={() => toggleSection("careLevel")}
+                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base"
+                  >
+                    <span>Care Level</span>
+                    <svg
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${expandedSections.careLevel ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedSections.careLevel && (
+                    <div className="space-y-2">
+                      {careLevels.map((level) => (
+                        <label key={level} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={filters.careLevel.includes(level)}
+                            onChange={() => toggleFilter("careLevel", level)}
+                            className="w-4 h-4 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
+                          />
+                          <span className="text-sm text-slate-700">{level}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Monthly Budget */}
+                <div>
+                  <button
+                    onClick={() => toggleSection("budget")}
+                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base"
+                  >
+                    <span>Monthly Budget</span>
+                    <svg
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${expandedSections.budget ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedSections.budget && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm font-medium text-slate-900">
+                        <span>$0</span>
+                        <span>$15,000+</span>
+                      </div>
+                      <div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="15000"
+                          step="500"
+                          value={filters.minBudget}
+                          onChange={(e) => updateMinBudget(Number(e.target.value))}
+                          className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-teal-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Amenities */}
+                <div>
+                  <button
+                    onClick={() => toggleSection("amenities")}
+                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base"
+                  >
+                    <span>Amenities</span>
+                    <svg
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${expandedSections.amenities ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedSections.amenities && (
+                    <div className="space-y-2">
+                      {amenities.map((amenity) => (
+                        <label key={amenity} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={filters.amenities.includes(amenity)}
+                            onChange={() => toggleFilter("amenities", amenity)}
+                            className="w-4 h-4 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
+                          />
+                          <span className="text-sm text-slate-700">{amenity}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Certifications */}
+                <div>
+                  <button
+                    onClick={() => toggleSection("certifications")}
+                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base"
+                  >
+                    <span>Certifications</span>
+                    <svg
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${expandedSections.certifications ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedSections.certifications && (
+                    <div className="space-y-2">
+                      {certifications.map((cert) => (
+                        <label key={cert} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={filters.certifications.includes(cert)}
+                            onChange={() => toggleFilter("certifications", cert)}
+                            className="w-4 h-4 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
+                          />
+                          <span className="text-sm text-slate-700">{cert}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Insurance Accepted */}
+                <div>
+                  <button
+                    onClick={() => toggleSection("insurance")}
+                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base"
+                  >
+                    <span>Insurance Accepted</span>
+                    <svg
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${expandedSections.insurance ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedSections.insurance && (
+                    <div className="space-y-2">
+                      {insuranceOptions.map((insurance) => (
+                        <label key={insurance} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={filters.insurance.includes(insurance)}
+                            onChange={() => toggleFilter("insurance", insurance)}
+                            className="w-4 h-4 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
+                          />
+                          <span className="text-sm text-slate-700">{insurance}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Availability */}
+                <div>
+                  <button
+                    onClick={() => toggleSection("availability")}
+                    className="w-full flex items-center justify-between text-left font-semibold text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base"
+                  >
+                    <span>Availability</span>
+                    <svg
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${expandedSections.availability ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedSections.availability && (
+                    <div className="space-y-2">
+                      {availabilityOptions.map((option) => (
+                        <label key={option} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={filters.availability.includes(option)}
+                            onChange={() => toggleFilter("availability", option)}
+                            className="w-4 h-4 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
+                          />
+                          <span className="text-sm text-slate-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Reset Filters Button */}
+                <div className="pt-3 sm:pt-4 border-t border-slate-200">
+                  <button
+                    onClick={() => {
+                      resetFilters();
+                      setMobileFiltersOpen(false);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium rounded-lg transition-colors text-sm"
+                  >
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Reset Filters
+                  </button>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </>
+      )}
     </div>
   );
 }
