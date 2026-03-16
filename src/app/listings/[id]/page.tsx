@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { listingsApi } from "@/services/listingService";
 import { listingImagesApi } from "@/services/listingImagesService";
+import { toursApi } from "@/services/toursService";
+import { useAuth } from "@/store/authStore";
 import type { ApiListing, ApiListingImage } from "@/types";
 import { CARE_TYPE_LABELS, CARE_TYPE_COLORS } from "@/types";
 
@@ -323,10 +325,15 @@ function CalendarPicker({ onSelect }: { onSelect: (date: Date) => void }) {
 
 export default function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"services" | "reviews" | "location">("services");
   const [scheduleTourOpen, setScheduleTourOpen] = useState(false);
   const [requestInfoOpen, setRequestInfoOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [tourSubmitting, setTourSubmitting] = useState(false);
+  const [tourError, setTourError] = useState<string | null>(null);
+  const [tourSuccess, setTourSuccess] = useState(false);
 
   // API state
   const [apiListing, setApiListing] = useState<ApiListing | null>(null);
@@ -488,6 +495,95 @@ export default function ListingDetailPage() {
   const handleDateSelect = (date: Date) => {
     setTourForm({ ...tourForm, date: formatDate(date) });
     setCalendarOpen(false);
+  };
+
+  // Parse date string (e.g., "March 13th, 2026") and time string (e.g., "2:00 PM") to ISO datetime
+  const parseDateTime = (dateStr: string, timeStr: string): string | null => {
+    try {
+      // Parse date string like "March 13th, 2026"
+      const dateMatch = dateStr.match(/(\w+)\s+(\d+)(?:st|nd|rd|th)?,\s+(\d+)/);
+      if (!dateMatch) return null;
+
+      const [, monthName, day, year] = dateMatch;
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      const monthIndex = monthNames.indexOf(monthName);
+      if (monthIndex === -1) return null;
+
+      // Parse time string like "2:00 PM"
+      const timeMatch = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (!timeMatch) return null;
+
+      let [, hours, minutes, ampm] = timeMatch;
+      let hour24 = parseInt(hours, 10);
+      if (ampm.toUpperCase() === "PM" && hour24 !== 12) hour24 += 12;
+      if (ampm.toUpperCase() === "AM" && hour24 === 12) hour24 = 0;
+
+      const date = new Date(parseInt(year, 10), monthIndex, parseInt(day, 10), hour24, parseInt(minutes, 10));
+      return date.toISOString();
+    } catch {
+      return null;
+    }
+  };
+
+  const handleTourSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTourError(null);
+    setTourSuccess(false);
+
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(`/listings/${id}`)}`);
+      return;
+    }
+
+    if (!id) {
+      setTourError("Invalid listing ID.");
+      return;
+    }
+
+    // Validate required fields
+    if (!tourForm.date || !tourForm.time) {
+      setTourError("Please select both date and time.");
+      return;
+    }
+
+    // Parse date and time to ISO string
+    const scheduledAt = parseDateTime(tourForm.date, tourForm.time);
+    if (!scheduledAt) {
+      setTourError("Invalid date or time format.");
+      return;
+    }
+
+    setTourSubmitting(true);
+
+    try {
+      await toursApi.create({
+        listing_id: id,
+        tour_type: "IN_PERSON", // Default to IN_PERSON, could be made configurable
+        scheduled_at: scheduledAt,
+        notes: tourForm.requests || undefined,
+      });
+
+      setTourSuccess(true);
+      // Reset form
+      setTourForm({
+        date: "March 13th, 2026",
+        time: "",
+        name: "",
+        email: "",
+        phone: "",
+        requests: "",
+      });
+
+      // Close form after 2 seconds
+      setTimeout(() => {
+        setScheduleTourOpen(false);
+        setTourSuccess(false);
+      }, 2000);
+    } catch (error) {
+      setTourError(error instanceof Error ? error.message : "Failed to schedule tour. Please try again.");
+    } finally {
+      setTourSubmitting(false);
+    }
   };
 
   return (
@@ -913,8 +1009,15 @@ export default function ListingDetailPage() {
               <div className="space-y-3">
                 <button
                   onClick={() => {
+                    if (!user) {
+                      // Redirect to login with return URL
+                      router.push(`/login?redirect=${encodeURIComponent(`/listings/${id}`)}`);
+                      return;
+                    }
                     setScheduleTourOpen(!scheduleTourOpen);
                     setRequestInfoOpen(false);
+                    setTourError(null);
+                    setTourSuccess(false);
                   }}
                   className="w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition-colors flex items-center justify-center gap-2"
                 >
@@ -925,6 +1028,11 @@ export default function ListingDetailPage() {
                 </button>
                 <button
                   onClick={() => {
+                    if (!user) {
+                      // Redirect to login with return URL
+                      router.push(`/login?redirect=${encodeURIComponent(`/listings/${id}`)}`);
+                      return;
+                    }
                     setRequestInfoOpen(!requestInfoOpen);
                     setScheduleTourOpen(false);
                   }}
@@ -973,7 +1081,19 @@ export default function ListingDetailPage() {
               <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6 mb-4">
                 <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4 sm:mb-6">Schedule a Tour</h2>
 
-                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setScheduleTourOpen(false); }}>
+                {tourSuccess && (
+                  <div className="mb-4 p-4 bg-teal-50 border border-teal-200 rounded-lg">
+                    <p className="text-teal-800 font-medium">Tour scheduled successfully!</p>
+                  </div>
+                )}
+
+                {tourError && (
+                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-800 font-medium">{tourError}</p>
+                  </div>
+                )}
+
+                <form className="space-y-4" onSubmit={handleTourSubmit}>
                   {/* Preferred Date */}
                   <div className="relative" ref={calendarRef}>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -1096,16 +1216,22 @@ export default function ListingDetailPage() {
                   <div className="flex gap-3 pt-4">
                     <button
                       type="button"
-                      onClick={() => setScheduleTourOpen(false)}
-                      className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+                      onClick={() => {
+                        setScheduleTourOpen(false);
+                        setTourError(null);
+                        setTourSuccess(false);
+                      }}
+                      disabled={tourSubmitting}
+                      className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-4 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors"
+                      disabled={tourSubmitting}
+                      className="flex-1 px-4 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Submit Request
+                      {tourSubmitting ? "Submitting..." : "Submit Request"}
                     </button>
                   </div>
                 </form>

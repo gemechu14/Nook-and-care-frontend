@@ -25,13 +25,15 @@ export default function ConditionalLayout({
   const isAdminPage = pathname?.startsWith("/admin");
   const isProviderPage = pathname?.startsWith("/providers");
   const isHomePage = pathname === "/";
+  const isLoginPage = pathname === "/login";
   const isAdminOrProvider = user && (user.role === "ADMIN" || user.role === "PROVIDER");
 
   // Hide header/footer on:
   // - admin routes
   // - provider routes
+  // - login page
   // - home route when the user is ADMIN or PROVIDER (since they will be redirected)
-  const hideShell = isAdminPage || isProviderPage || (isHomePage && !!isAdminOrProvider);
+  const hideShell = isAdminPage || isProviderPage || isLoginPage || (isHomePage && !!isAdminOrProvider);
 
   return (
     <>

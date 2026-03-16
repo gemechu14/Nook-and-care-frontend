@@ -1,7 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useOptionalAuth } from "@/store/authStore";
+import { favoritesApi } from "@/services/favoritesService";
 import type { ApiListing } from "@/types";
 import { CARE_TYPE_LABELS } from "@/types";
 
@@ -62,6 +66,67 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default function ListingCard({ listing }: ListingCardProps) {
+  const router = useRouter();
+  const { user } = useOptionalAuth();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [favoriteId, setFavoriteId] = useState<string | null>(null);
+
+  // Load user favorites on mount
+  useEffect(() => {
+    if (user) {
+      favoritesApi.list()
+        .then((favorites) => {
+          const favorite = favorites.find(fav => fav.listing_id === listing.id);
+          if (favorite) {
+            setIsFavorite(true);
+            setFavoriteId(favorite.id);
+          } else {
+            setIsFavorite(false);
+            setFavoriteId(null);
+          }
+        })
+        .catch(() => {
+          // Silently fail - favorites are optional
+        });
+    } else {
+      setIsFavorite(false);
+      setFavoriteId(null);
+    }
+  }, [user, listing.id]);
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // If not logged in, redirect to login
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+
+    setFavoriteLoading(true);
+
+    try {
+      // If already favorite, remove it
+      if (isFavorite && favoriteId) {
+        await favoritesApi.remove(favoriteId);
+        setIsFavorite(false);
+        setFavoriteId(null);
+      } else {
+        // Add to favorites
+        const favorite = await favoritesApi.add(user.id, listing.id);
+        setIsFavorite(true);
+        setFavoriteId(favorite.id);
+      }
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
+      // Optionally show error toast/notification
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
   // Handle API format vs legacy format
   const isApiListing = "care_type" in listing;
   
@@ -122,10 +187,26 @@ export default function ListingCard({ listing }: ListingCardProps) {
           </div>
         )}
         {/* Favorite */}
-        <button className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-slate-50 transition-colors">
-          <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
+        <button 
+          onClick={handleFavoriteClick}
+          disabled={favoriteLoading}
+          className={`absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            isFavorite ? "bg-red-50 hover:bg-red-100" : ""
+          }`}
+          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        >
+          {favoriteLoading ? (
+            <div className="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <svg 
+              className={`w-4 h-4 ${isFavorite ? "text-red-500 fill-red-500" : "text-slate-400"}`} 
+              fill={isFavorite ? "currentColor" : "none"} 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          )}
         </button>
       </div>
 
