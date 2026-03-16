@@ -165,6 +165,11 @@ export default function Header() {
   const auth = useOptionalAuth();
   const user = auth?.user;
   const loading = auth?.loading ?? false;
+  
+  // Check if we have a token - if no token, we know immediately user is not logged in
+  const hasToken = typeof window !== "undefined" && !!localStorage.getItem("access_token");
+  // Only show loading if we have a token (verifying) or if explicitly loading
+  const showLoading = loading && hasToken;
   const [isScrolled, setIsScrolled] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showProviderModal, setShowProviderModal] = useState(false);
@@ -367,7 +372,11 @@ export default function Header() {
 
          
             {/* Auth Section */}
-            {!loading && (
+            {showLoading ? (
+              <div className="w-[80px] h-9 flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
               <>
                 {user ? (
                   <div className="relative" ref={userMenuRef}>
@@ -429,9 +438,9 @@ export default function Header() {
                     )}
                   </div>
                 ) : (
-          <Link href="/login" className={signInButtonClasses}>
-            Sign In
-          </Link>
+                  <Link href="/login" className={signInButtonClasses}>
+                    Sign In
+                  </Link>
                 )}
               </>
             )}

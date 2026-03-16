@@ -1,7 +1,15 @@
-﻿import Link from "next/link";
+﻿"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import ListingCard from "@/components/ui/ListingCard";
 import HomeSearchForm from "@/components/ui/HomeSearchForm";
+import { useAuthStore } from "@/store/authStore";
+import { listingsApi } from "@/services/listingService";
+import { BASE_URL } from "@/constants/config";
+import type { ApiListing } from "@/types";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -68,62 +76,7 @@ const careTypes = [
   },
 ];
 
-const featuredListings = [
-  {
-    id: "1",
-    title: "Oakwood Adult Family Home",
-    location: "Kirkland, WA",
-    careTypes: [
-      { label: "Adult Family Home", color: "orange" as const },
-      { label: "Assisted Living", color: "teal" as const },
-    ],
-    price: 3800,
-    rating: 4.9,
-    reviewCount: 34,
-    bedsAvailable: 1,
-    image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80",
-    verified: true,
-  },
-  {
-    id: "2",
-    title: "Evergreen Memory Care",
-    location: "Seattle, WA",
-    careTypes: [{ label: "Memory Care", color: "purple" as const }],
-    price: 6500,
-    rating: 4.8,
-    reviewCount: 89,
-    bedsAvailable: 2,
-    image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80",
-    verified: true,
-  },
-  {
-    id: "3",
-    title: "Sunrise Senior Living at Bellevue",
-    location: "Bellevue, WA",
-    careTypes: [
-      { label: "Assisted Living", color: "teal" as const },
-      { label: "Memory Care", color: "purple" as const },
-    ],
-    price: 4500,
-    rating: 4.7,
-    reviewCount: 127,
-    bedsAvailable: 4,
-    image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80",
-    verified: true,
-  },
-  {
-    id: "4",
-    title: "Cascade Independent Living",
-    location: "Redmond, WA",
-    careTypes: [{ label: "Independent Living", color: "blue" as const }],
-    price: 2800,
-    rating: 4.5,
-    reviewCount: 78,
-    bedsAvailable: 12,
-    image: "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80",
-    verified: true,
-  },
-];
+// Featured listings will be fetched from API
 
 const howToSteps = [
   {
@@ -325,6 +278,83 @@ const resources = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
+  const router = useRouter();
+  const { user, loading } = useAuthStore();
+  const [featuredListings, setFeaturedListings] = useState<ApiListing[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(true);
+  const [listingsError, setListingsError] = useState<string | null>(null);
+
+  // Fetch featured listings from API
+  useEffect(() => {
+    const fetchFeaturedListings = async () => {
+      try {
+        setListingsLoading(true);
+        setListingsError(null);
+        const listings = await listingsApi.featured();
+        
+        // Filter to only show ACTIVE listings
+        const activeListings = listings.filter(listing => listing.status === "ACTIVE");
+        
+        // Get base URL without /api/v1
+        const baseUrl = BASE_URL.replace("/api/v1", "");
+        
+        // Process listings to get primary image URL
+        const listingsWithImages = activeListings.slice(0, 4).map((listing) => {
+          // Use images array from listing response if available
+          const images = listing.images || [];
+          const primaryImage = images.find(img => img.is_primary) || images[0];
+          
+          let imageUrl = "/placeholder-listing.jpg";
+          if (primaryImage?.image_url) {
+            // Construct full URL by prepending base URL
+            imageUrl = primaryImage.image_url.startsWith("http")
+              ? primaryImage.image_url
+              : `${baseUrl}${primaryImage.image_url}`;
+          }
+          
+          return {
+            ...listing,
+            primaryImageUrl: imageUrl
+          };
+        });
+        
+        setFeaturedListings(listingsWithImages);
+      } catch (error) {
+        console.error("Failed to fetch featured listings:", error);
+        setListingsError("Failed to load featured communities. Please try again later.");
+      } finally {
+        setListingsLoading(false);
+      }
+    };
+
+    fetchFeaturedListings();
+  }, []);
+
+  // Redirect admins and providers to their dashboards
+  useEffect(() => {
+    if (loading) return; // Wait for auth to load
+    
+    if (user) {
+      if (user.role === "ADMIN") {
+        router.replace("/admin");
+        return;
+      }
+      if (user.role === "PROVIDER") {
+        router.replace("/admin");
+        return;
+      }
+    }
+  }, [user, loading, router]);
+
+  // Show loading state while checking auth OR if redirecting
+  if (loading || (user && (user.role === "ADMIN" || user.role === "PROVIDER"))) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col">
 
@@ -441,11 +471,36 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
-            {featuredListings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
-            ))}
-          </div>
+          {listingsLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : listingsError ? (
+            <div className="text-center py-20">
+              <p className="text-slate-600 mb-4">{listingsError}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="text-teal-600 hover:text-teal-700 font-medium"
+              >
+                Try again
+              </button>
+            </div>
+          ) : featuredListings.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-slate-600">No featured communities available at this time.</p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
+              {featuredListings.map((listing) => {
+                // Transform ApiListing to include image for ListingCard
+                const listingWithImage = {
+                  ...listing,
+                  image: (listing as any).primaryImageUrl || "/placeholder-listing.jpg"
+                };
+                return <ListingCard key={listing.id} listing={listingWithImage} />;
+              })}
+            </div>
+          )}
 
           <div className="sm:hidden mt-6 text-center">
             <Link

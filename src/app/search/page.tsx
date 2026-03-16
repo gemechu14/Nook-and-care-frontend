@@ -1,90 +1,12 @@
 ﻿"use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import ListingCard from "@/components/ui/ListingCard";
-import type { Listing } from "@/types";
+import { listingsApi } from "@/services/listingService";
+import { BASE_URL } from "@/constants/config";
+import type { ApiListing } from "@/types";
 
-// Mock listings data
-const mockListings: Listing[] = [
-  {
-    id: "1",
-    title: "Oakwood Adult Family Home",
-    location: "Kirkland, WA",
-    careTypes: [
-      { label: "Adult Family Home", color: "orange" },
-      { label: "Assisted Living", color: "teal" },
-    ],
-    price: 3800,
-    rating: 4.9,
-    reviewCount: 34,
-    bedsAvailable: 1,
-    image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80",
-    verified: true,
-  },
-  {
-    id: "2",
-    title: "Evergreen Memory Care",
-    location: "Seattle, WA",
-    careTypes: [{ label: "Memory Care", color: "purple" }],
-    price: 6500,
-    rating: 4.8,
-    reviewCount: 89,
-    bedsAvailable: 2,
-    image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80",
-    verified: true,
-  },
-  {
-    id: "3",
-    title: "Sunrise Senior Living at Bellevue",
-    location: "Bellevue, WA",
-    careTypes: [
-      { label: "Assisted Living", color: "teal" },
-      { label: "Memory Care", color: "purple" },
-    ],
-    price: 4500,
-    rating: 4.7,
-    reviewCount: 127,
-    bedsAvailable: 4,
-    image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80",
-    verified: true,
-  },
-  {
-    id: "4",
-    title: "Harbor View Assisted Living",
-    location: "Edmonds, WA",
-    careTypes: [{ label: "Assisted Living", color: "teal" }],
-    price: 5200,
-    rating: 4.6,
-    reviewCount: 56,
-    bedsAvailable: 6,
-    image: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=800&q=80",
-    verified: true,
-  },
-  {
-    id: "5",
-    title: "Cascade Independent Living",
-    location: "Redmond, WA",
-    careTypes: [{ label: "Independent Living", color: "blue" }],
-    price: 2800,
-    rating: 4.5,
-    reviewCount: 78,
-    bedsAvailable: 12,
-    image: "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80",
-    verified: true,
-  },
-  {
-    id: "6",
-    title: "Pacific Skilled Nursing & Rehabilitation",
-    location: "Tacoma, WA",
-    careTypes: [{ label: "Skilled Nursing", color: "orange" }],
-    price: 7200,
-    rating: 4.4,
-    reviewCount: 92,
-    bedsAvailable: 8,
-    image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80",
-    verified: true,
-  },
-];
+// Listings will be fetched from API
 
 interface FilterState {
   careLevel: string[];
@@ -147,7 +69,7 @@ export default function SearchPage() {
   const [filters, setFilters] = useState<FilterState>({
     careLevel: [],
     minBudget: 0,
-    maxBudget: 15000,
+    maxBudget: 15000, // Keep for compatibility but we'll use minBudget only
     amenities: [],
     certifications: [],
     insurance: [],
@@ -163,6 +85,9 @@ export default function SearchPage() {
   });
   const [sortBy, setSortBy] = useState<SortOption>("highest-rated");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [listings, setListings] = useState<ApiListing[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(true);
+  const [listingsError, setListingsError] = useState<string | null>(null);
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
@@ -196,10 +121,17 @@ export default function SearchPage() {
     }));
   };
 
+  const updateMinBudget = (min: number) => {
+    setFilters((prev) => ({
+      ...prev,
+      minBudget: min,
+    }));
+  };
+
   const resetFilters = () => {
     setFilters({
       careLevel: [],
-      minBudget: 0,
+      minBudget: 0, // Default to 0 (show all)
       maxBudget: 15000,
       amenities: [],
       certifications: [],
@@ -215,12 +147,11 @@ export default function SearchPage() {
       active.push({ category: "careLevel", label: item, value: item });
     });
     
-    if (filters.minBudget > 0 || filters.maxBudget < 15000) {
-      const minLabel = filters.minBudget === 0 ? "$0" : `$${filters.minBudget.toLocaleString()}`;
-      const maxLabel = filters.maxBudget === 15000 ? "$15,000+" : `$${filters.maxBudget.toLocaleString()}`;
+    if (filters.minBudget > 0) {
+      const minLabel = filters.minBudget === 15000 ? "$15,000+" : `$${filters.minBudget.toLocaleString()}+`;
       active.push({
         category: "budget",
-        label: `${minLabel} - ${maxLabel}`,
+        label: minLabel,
         value: "budget",
       });
     }
@@ -252,19 +183,155 @@ export default function SearchPage() {
     }
   };
 
-  const filteredAndSortedListings = useMemo(() => {
-    let filtered = [...mockListings];
+  // Fetch listings from API - runs on mount and when filters/search change
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchListings = async () => {
+      try {
+        setListingsLoading(true);
+        setListingsError(null);
+        
+        // Build API filter params
+        // Note: status is not a supported API parameter, so we filter client-side
+        // When filters are at default (empty arrays, minBudget = 0), fetch ALL listings
+        const apiFilters: {
+          skip?: number;
+          limit?: number;
+          city?: string;
+          care_type?: string;
+          min_price?: number;
+          max_price?: number;
+        } = {
+          limit: 100, // Get more listings for client-side filtering
+        };
+        
+        // Only add filters if they have non-default values
 
-    // Apply filters
+        // Map care level filters to API care_type
+        // When no care level is selected (default), fetch all listings
+        if (filters.careLevel.length > 0) {
+          // For now, use the first selected care type
+          // In a real implementation, you might want to fetch all and filter client-side
+          // or make multiple API calls
+          const careTypeMap: Record<string, string> = {
+            "Assisted Living": "ASSISTED_LIVING",
+            "Memory Care": "MEMORY_CARE",
+            "Independent Living": "INDEPENDENT_LIVING",
+            "Adult Family Home": "ADULT_FAMILY_HOME",
+            "Skilled Nursing": "SKILLED_NURSING",
+          };
+          const firstCareType = careTypeMap[filters.careLevel[0]];
+          if (firstCareType) {
+            apiFilters.care_type = firstCareType;
+          }
+        }
+        // When careLevel is empty (default), don't add care_type filter - fetch all care types
+
+        // Add price filter - use minBudget as minimum price threshold
+        // Only add min_price filter if minBudget is greater than 0
+        // When minBudget is 0, we want to show all listings regardless of price
+        if (filters.minBudget > 0) {
+          apiFilters.min_price = filters.minBudget;
+        }
+        // Don't add max_price filter - we want to show all listings above minBudget
+
+        // Add city filter if search query looks like a location
+        if (searchQuery.trim()) {
+          // Simple heuristic: if it contains a comma or looks like a city/state
+          const parts = searchQuery.split(",").map(s => s.trim());
+          if (parts.length > 0) {
+            apiFilters.city = parts[0];
+          }
+        }
+
+        console.log("Fetching listings with filters:", apiFilters);
+        const fetchedListings = await listingsApi.list(apiFilters);
+        
+        // Ensure we have an array (handle null/undefined responses)
+        const listingsArray = Array.isArray(fetchedListings) ? fetchedListings : [];
+        
+        console.log("Raw listings from API:", listingsArray.length);
+        
+        // Get base URL without /api/v1
+        const baseUrl = BASE_URL.replace("/api/v1", "");
+        
+        // Process listings to get primary image URL from images array
+        // IMPORTANT: Do not filter by status here — show ALL listings by default
+        const listingsWithImages = listingsArray.map((listing) => {
+          // Use images array from listing response if available
+          const images = listing.images || [];
+          const primaryImage = images.find(img => img.is_primary) || images[0];
+          
+          let imageUrl = "/placeholder-listing.jpg";
+          if (primaryImage?.image_url) {
+            // Construct full URL by prepending base URL
+            imageUrl = primaryImage.image_url.startsWith("http")
+              ? primaryImage.image_url
+              : `${baseUrl}${primaryImage.image_url}`;
+          }
+          
+          return {
+            ...listing,
+            primaryImageUrl: imageUrl
+          };
+        });
+        
+        if (isMounted) {
+          setListings(listingsWithImages);
+        }
+      } catch (error) {
+        console.error("Failed to fetch listings:", error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        console.error("Error details:", errorMessage);
+        if (isMounted) {
+          setListingsError(`Failed to load listings: ${errorMessage}`);
+          setListings([]); // Ensure listings is empty on error
+        }
+      } finally {
+        if (isMounted) {
+          setListingsLoading(false);
+        }
+      }
+    };
+
+    // Always fetch on mount and when filters/search change
+    fetchListings();
+    
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.careLevel, filters.minBudget, searchQuery]);
+
+  const filteredAndSortedListings = useMemo(() => {
+    let filtered = [...listings];
+
+    // Apply client-side filters (for multiple care types, amenities, etc.)
     if (filters.careLevel.length > 0) {
-      filtered = filtered.filter((listing) =>
-        listing.careTypes.some((ct) => filters.careLevel.includes(ct.label))
-      );
+      filtered = filtered.filter((listing) => {
+        const listingCareType = listing.care_type;
+        const careTypeMap: Record<string, string[]> = {
+          "ASSISTED_LIVING": ["Assisted Living"],
+          "MEMORY_CARE": ["Memory Care"],
+          "INDEPENDENT_LIVING": ["Independent Living"],
+          "ADULT_FAMILY_HOME": ["Adult Family Home"],
+          "SKILLED_NURSING": ["Skilled Nursing"],
+        };
+        const listingCareTypeLabel = careTypeMap[listingCareType]?.[0] || "";
+        return filters.careLevel.includes(listingCareTypeLabel);
+      });
     }
 
-    if (filters.minBudget > 0 || filters.maxBudget < 15000) {
+    // Price filter - filter by minimum price threshold
+    // When minBudget is 0, show all listings (no price filtering)
+    if (filters.minBudget > 0) {
       filtered = filtered.filter(
-        (listing) => listing.price >= filters.minBudget && listing.price <= filters.maxBudget
+        (listing) => {
+          const price = listing.price ?? 0;
+          // Include listings with null/0 price when minBudget > 0, or when price >= minBudget
+          return price === 0 || price === null || price >= filters.minBudget;
+        }
       );
     }
 
@@ -272,20 +339,20 @@ export default function SearchPage() {
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case "highest-rated":
-          return b.rating - a.rating;
+          return (b.avg_rating ?? 0) - (a.avg_rating ?? 0);
         case "price-low-high":
-          return a.price - b.price;
+          return (a.price ?? 0) - (b.price ?? 0);
         case "price-high-low":
-          return b.price - a.price;
+          return (b.price ?? 0) - (a.price ?? 0);
         case "most-available":
-          return b.bedsAvailable - a.bedsAvailable;
+          return (b.available_beds ?? 0) - (a.available_beds ?? 0);
         default:
           return 0;
       }
     });
 
     return sorted;
-  }, [filters, sortBy]);
+  }, [listings, filters, sortBy]);
 
   const activeFilters = getActiveFilters();
 
@@ -409,36 +476,24 @@ export default function SearchPage() {
                     </svg>
                   </button>
                   {expandedSections.budget && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between text-sm text-slate-600 mb-2">
-                        <span>${filters.minBudget.toLocaleString()}</span>
-                        <span>${filters.maxBudget === 15000 ? "15,000+" : filters.maxBudget.toLocaleString()}</span>
+                    <div className="space-y-3">
+                      {/* Price Labels */}
+                      <div className="flex items-center justify-between text-sm font-medium text-slate-900">
+                        <span>$0</span>
+                        <span>$15,000+</span>
                       </div>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-xs text-slate-500 mb-1 block">Min: ${filters.minBudget.toLocaleString()}</label>
-                          <input
-                            type="range"
-                            min="0"
-                            max={filters.maxBudget}
-                            step="500"
-                            value={filters.minBudget}
-                            onChange={(e) => updateBudget(Number(e.target.value), filters.maxBudget)}
-                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-slate-500 mb-1 block">Max: ${filters.maxBudget === 15000 ? "15,000+" : filters.maxBudget.toLocaleString()}</label>
-                          <input
-                            type="range"
-                            min={filters.minBudget}
-                            max="15000"
-                            step="500"
-                            value={filters.maxBudget}
-                            onChange={(e) => updateBudget(filters.minBudget, Number(e.target.value))}
-                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                          />
-                        </div>
+                      
+                      {/* Single Range Slider */}
+                      <div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="15000"
+                          step="500"
+                          value={filters.minBudget}
+                          onChange={(e) => updateMinBudget(Number(e.target.value))}
+                          className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-teal-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                        />
                       </div>
                     </div>
                   )}
@@ -635,11 +690,53 @@ export default function SearchPage() {
             </div>
 
             {/* Listings Grid */}
-            <div className={viewMode === "grid" ? "grid grid-cols-2 gap-6" : "space-y-6"}>
-              {filteredAndSortedListings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
-            </div>
+            {listingsLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : listingsError ? (
+              <div className="text-center py-20">
+                <p className="text-slate-600 mb-4">{listingsError}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="text-teal-600 hover:text-teal-700 font-medium"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : filteredAndSortedListings.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-slate-600 mb-2">
+                  {activeFilters.length > 0 || searchQuery.trim() 
+                    ? "No communities found matching your criteria."
+                    : "No communities found."}
+                </p>
+                <p className="text-slate-500 text-sm">
+                  {activeFilters.length > 0 || searchQuery.trim()
+                    ? "Try adjusting your filters or search terms."
+                    : "There are currently no active listings available."}
+                </p>
+                {(activeFilters.length > 0 || searchQuery.trim()) && (
+                  <button
+                    onClick={resetFilters}
+                    className="mt-4 text-teal-600 hover:text-teal-700 font-medium"
+                  >
+                    Clear all filters
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className={viewMode === "grid" ? "grid grid-cols-2 gap-6" : "space-y-6"}>
+                {filteredAndSortedListings.map((listing) => {
+                  // Transform ApiListing to include image for ListingCard
+                  const listingWithImage = {
+                    ...listing,
+                    image: (listing as any).primaryImageUrl || "/placeholder-listing.jpg"
+                  };
+                  return <ListingCard key={listing.id} listing={listingWithImage} />;
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

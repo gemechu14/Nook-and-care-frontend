@@ -356,17 +356,35 @@ export default function ListingDetailPage() {
   const calendarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!id) { setPageError("Invalid listing ID."); setPageLoading(false); return; }
+    if (!id) {
+      setPageError("Invalid listing ID.");
+      setPageLoading(false);
+      return;
+    }
+    
     // Check if it's a mock ID (1-4) — use mock data; otherwise fetch from API
-    if (mockListings[id]) { setPageLoading(false); return; }
+    if (mockListings[id]) {
+      setPageLoading(false);
+      return;
+    }
+    
     (async () => {
       try {
-        const [data, imgs] = await Promise.all([
-          listingsApi.getById(id),
-          listingImagesApi.getByListing(id).catch(() => [] as ApiListingImage[]),
-        ]);
+        const data = await listingsApi.getById(id);
         setApiListing(data);
-        setApiImages(imgs);
+        
+        // If images are not included in the listing response, fetch them separately
+        if (!data.images || data.images.length === 0) {
+          try {
+            const imgs = await listingImagesApi.getByListing(id);
+            setApiImages(imgs);
+          } catch {
+            // Images fetch failed, but continue with listing data
+            setApiImages([]);
+          }
+        } else {
+          setApiImages([]);
+        }
       } catch (err) {
         setPageError(err instanceof Error ? err.message : "Community not found.");
       } finally {
@@ -397,29 +415,50 @@ export default function ListingDetailPage() {
   const listing: ListingDetail | null = rawMock ?? (apiListing ? {
     id: apiListing.id,
     title: apiListing.title,
-    address: [apiListing.address, apiListing.city, apiListing.state].filter(Boolean).join(", "),
-    careTypes: [{ label: CARE_TYPE_LABELS[apiListing.care_type] ?? apiListing.care_type, color: CARE_TYPE_COLORS[apiListing.care_type] ?? "teal" }],
+    address: [
+      apiListing.address,
+      apiListing.city,
+      apiListing.state,
+      apiListing.postal_code
+    ].filter(Boolean).join(", "),
+    careTypes: [{
+      label: CARE_TYPE_LABELS[apiListing.care_type] ?? apiListing.care_type,
+      color: CARE_TYPE_COLORS[apiListing.care_type] ?? "teal"
+    }],
     price: apiListing.price ?? 0,
     maxPrice: (apiListing.price ?? 0) * 1.2,
     rating: apiListing.avg_rating ?? 0,
     reviewCount: apiListing.review_count,
     bedsAvailable: apiListing.available_beds ?? 0,
     capacity: apiListing.capacity ?? 0,
-    staffRatio: "—",
+    staffRatio: apiListing.staff_ratio ?? "—",
     phone: apiListing.phone ?? "",
     email: apiListing.email ?? "",
     website: "",
     licenseNumber: apiListing.license_number ?? "",
-    established: new Date(apiListing.created_at).getFullYear().toString(),
-    images: apiImages.length > 0
-      ? apiImages.sort((a, b) => a.display_order - b.display_order).map((img) =>
-          listingImagesApi.getImageUrl(img.image_url, img.id)
-        )
-      : ["https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80"],
+    established: apiListing.established_year?.toString() ?? new Date(apiListing.created_at).getFullYear().toString(),
+    // Images: Use images from listing response if available, otherwise fallback to separately fetched images
+    // listingImagesApi.getImageUrl() handles base URL prepending for relative URLs
+    images: (apiListing.images && apiListing.images.length > 0)
+      ? apiListing.images
+          .sort((a, b) => a.display_order - b.display_order)
+          .map((img) => listingImagesApi.getImageUrl(img.image_url, img.id))
+      : (apiImages.length > 0
+          ? apiImages
+              .sort((a, b) => a.display_order - b.display_order)
+              .map((img) => listingImagesApi.getImageUrl(img.image_url, img.id))
+          : ["https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80"]),
     description: apiListing.description ?? "",
-    careServices: apiListing.has_24_hour_care ? ["24-hour care available"] : [],
-    amenities: [], activities: [], diningOptions: [],
-    safetyFeatures: [], certifications: [], insuranceAccepted: [],
+    careServices: [
+      ...(apiListing.has_24_hour_care ? ["24-hour care available"] : []),
+      ...(apiListing.services?.filter(s => s.is_included).map(s => s.treatment_service.name) ?? [])
+    ],
+    amenities: apiListing.amenities?.map(a => a.amenity.name) ?? [],
+    activities: apiListing.activities?.map(a => a.activity.name) ?? [],
+    diningOptions: apiListing.dining_options?.map(d => d.dining_option.name) ?? [],
+    safetyFeatures: apiListing.safety_features?.map(s => s.safety_feature.name) ?? [],
+    certifications: apiListing.certifications?.map(c => c.certification.name) ?? [],
+    insuranceAccepted: apiListing.insurance_options?.map(i => i.insurance_option.name) ?? [],
   } : null);
 
   if (pageLoading) return (
@@ -478,6 +517,8 @@ export default function ListingDetailPage() {
               src={listing.images[0]}
               alt={listing.title}
               fill
+              // Use raw backend image URL instead of Next.js image optimizer
+              unoptimized
               className="object-cover transition-transform duration-300 group-hover:scale-110"
             />
           </div>
@@ -490,6 +531,7 @@ export default function ListingDetailPage() {
                 src={listing.images[1] ?? listing.images[0]}
                 alt={`${listing.title} photo 2`}
                 fill
+                unoptimized
                 className="object-cover transition-transform duration-300 group-hover:scale-110"
               />
             </div>
@@ -499,6 +541,7 @@ export default function ListingDetailPage() {
                 src={listing.images[2] ?? listing.images[0]}
                 alt={`${listing.title} photo 3`}
                 fill
+                unoptimized
                 className="object-cover transition-transform duration-300 group-hover:scale-110"
               />
             </div>
@@ -508,6 +551,7 @@ export default function ListingDetailPage() {
                 src={listing.images[3] ?? listing.images[0]}
                 alt={`${listing.title} photo 4`}
                 fill
+                unoptimized
                 className="object-cover transition-transform duration-300 group-hover:scale-110"
               />
             </div>
@@ -518,6 +562,7 @@ export default function ListingDetailPage() {
                   src={listing.images[4]}
                   alt={`${listing.title} photo 5`}
                   fill
+                  unoptimized
                   className="object-cover opacity-60 transition-transform duration-300 group-hover:scale-110"
                 />
               )}

@@ -20,10 +20,17 @@ export interface ApiListing {
   room_type: ApiRoomType;
   city: string | null;
   state: string | null;
+  country?: string | null;
+  postal_code?: string | null;
   address: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   price: number | null;
+  currency?: string | null;
   capacity: number | null;
   available_beds: number | null;
+  staff_ratio?: string | null;
+  established_year?: number | null;
   phone: string | null;
   email: string | null;
   license_number: string | null;
@@ -34,6 +41,61 @@ export interface ApiListing {
   review_count: number;
   created_at: string;
   updated_at: string;
+  images?: ApiListingImage[]; // Images array included in listing response
+  amenities?: Array<{
+    id: string;
+    amenity: Amenity;
+    created_at: string;
+  }>;
+  languages?: Array<{
+    id: string;
+    language: Language;
+    created_at: string;
+  }>;
+  certifications?: Array<{
+    id: string;
+    certification: Certification;
+    license_number: string | null;
+    created_at: string;
+  }>;
+  activities?: Array<{
+    id: string;
+    activity: Activity;
+    created_at: string;
+  }>;
+  dining_options?: Array<{
+    id: string;
+    dining_option: DiningOption;
+    created_at: string;
+  }>;
+  safety_features?: Array<{
+    id: string;
+    safety_feature: SafetyFeature;
+    created_at: string;
+  }>;
+  insurance_options?: Array<{
+    id: string;
+    insurance_option: InsuranceOption;
+    created_at: string;
+  }>;
+  house_rules?: Array<{
+    id: string;
+    house_rule: HouseRule;
+    display_order: number;
+    created_at: string;
+  }>;
+  equipment?: Array<{
+    id: string;
+    equipment: Equipment;
+    created_at: string;
+  }>;
+  services?: Array<{
+    id: string;
+    treatment_service: TreatmentService;
+    price: number | null;
+    is_included: boolean;
+    created_at: string;
+  }>;
 }
 
 export interface ApiListingImage {

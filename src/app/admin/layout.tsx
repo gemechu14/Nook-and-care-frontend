@@ -36,7 +36,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       router.push("/login");
       return;
     }
-    if (user.role !== "ADMIN") {
+    // Allow both ADMIN and PROVIDER roles
+    if (user.role !== "ADMIN" && user.role !== "PROVIDER") {
       router.push("/");
       return;
     }
@@ -55,7 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (!user || user.role !== "ADMIN") {
+  if (!user || (user.role !== "ADMIN" && user.role !== "PROVIDER")) {
     return null;
   }
 

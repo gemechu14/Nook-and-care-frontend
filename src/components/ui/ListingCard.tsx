@@ -74,10 +74,14 @@ export default function ListingCard({ listing }: ListingCardProps) {
     : ("careTypes" in listing && listing.careTypes) || [];
   
   // Extract other fields
-  // ApiListing doesn't have image_url directly - images are fetched separately
-  const image = isApiListing 
-    ? "/placeholder-listing.jpg" // Will need to fetch images separately if needed
-    : ("image" in listing ? listing.image : "/placeholder-listing.jpg") || "/placeholder-listing.jpg";
+  // Prefer explicit image props passed from callers (homepage/search) and fall back gracefully
+  const image =
+    ("image" in listing && listing.image) ||
+    ("image_url" in listing && listing.image_url) ||
+    // Some callers may attach a computed primary image URL
+    ("primaryImageUrl" in (listing as any) && (listing as any).primaryImageUrl) ||
+    // Final fallback placeholder (remote image to avoid missing local asset issues)
+    "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80";
   const location = isApiListing 
     ? [(listing as ApiListing).city, (listing as ApiListing).state].filter(Boolean).join(", ") || "Location TBD"
     : ("location" in listing ? listing.location : "Location TBD") || "Location TBD";
@@ -102,6 +106,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
         <Image
           src={image}
           alt={listing.title}
+          unoptimized
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-110"
         />
@@ -164,7 +169,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
         )}
 
         {/* Price + Actions */}
-        <div className="flex items-end justify-between">
+          <div className="flex items-end justify-between">
           <div>
             <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Starting At</p>
             <p className="text-2xl font-bold text-slate-900">
@@ -180,7 +185,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
             </button>
             <Link
               href={`/listings/${listing.id}`}
-              className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors"
+              className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-teal-600 text-white text-xs font-semibold tracking-wide hover:bg-teal-700 transition-colors"
             >
               View Details
             </Link>

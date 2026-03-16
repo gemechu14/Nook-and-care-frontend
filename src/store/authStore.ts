@@ -20,9 +20,14 @@ interface AuthState {
 
 // ─── Zustand store ────────────────────────────────────────────────────────────
 
+// Check for token synchronously on initialization
+const hasToken = typeof window !== "undefined" && !!tokenStorage.getAccess();
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  loading: true,
+  // Only set loading to true if we have a token (need to verify it)
+  // If no token, we know immediately user is not logged in
+  loading: hasToken,
 
   refreshUser: async () => {
     const token = tokenStorage.getAccess();
@@ -71,6 +76,7 @@ export function useAuth() {
 export function useOptionalAuth() {
   return useAuthStore();
 }
+
 
 
 
