@@ -110,7 +110,7 @@ export function Sidebar({ activeNav, onNavChange, isOpen, onClose, onRefresh, is
       <aside
         ref={sidebarRef}
         className={`
-          fixed lg:static inset-y-0 left-0 z-50
+          fixed inset-y-0 left-0 z-50
           bg-[#1a2035] text-white flex flex-col
           transform transition-all duration-300 ease-in-out
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
@@ -126,7 +126,7 @@ export function Sidebar({ activeNav, onNavChange, isOpen, onClose, onRefresh, is
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 overflow-y-auto">
+        <nav className="flex-1 px-3 py-4 overflow-y-auto min-h-0">
           {!isCollapsed && (
             <p className="text-xs font-semibold text-white/40 uppercase tracking-widest px-3 mb-3">
               Menu
@@ -155,7 +155,7 @@ export function Sidebar({ activeNav, onNavChange, isOpen, onClose, onRefresh, is
         </nav>
 
         {/* User */}
-        <div ref={avatarMenuRef} className={`px-4 py-4 border-t border-white/10 relative ${isCollapsed ? "px-2" : ""}`}>
+        <div ref={avatarMenuRef} className={`px-4 py-4 border-t border-white/10 relative shrink-0 ${isCollapsed ? "px-2" : ""}`}>
           <button
             onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
             className={`w-full flex items-center gap-2.5 hover:bg-white/5 rounded-lg p-2 transition-colors ${isCollapsed ? "justify-center" : ""}`}

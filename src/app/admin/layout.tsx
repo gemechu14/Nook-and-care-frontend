@@ -78,7 +78,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         isCollapsed={isCollapsed}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
+        isCollapsed ? "lg:ml-16" : "lg:ml-56"
+      }`}>
         <AdminHeader 
           onMenuClick={() => setSidebarOpen(!sidebarOpen)} 
           onToggleCollapse={() => setIsCollapsed(!isCollapsed)}

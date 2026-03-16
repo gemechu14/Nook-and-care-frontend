@@ -47,17 +47,38 @@ function FeaturePanel<C extends { id: string; name: string }, R extends { id: st
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const activeItemIds = new Set(activeRecords.map(getItemId));
-  const activeMap = new Map(activeRecords.map((r) => [getItemId(r), r.id]));
   
   // Get items that are not yet added
-  const availableItems = catalogItems.filter(item => !activeItemIds.has(item.id));
-  
+  const availableItems = catalogItems.filter((item) => !activeItemIds.has(item.id));
+
   // Get active items with their names
-  const activeItems = activeRecords.map(record => {
+  const activeItems = activeRecords.map((record) => {
     const itemId = getItemId(record);
-    const catalogItem = catalogItems.find(c => c.id === itemId);
+    const catalogItem = catalogItems.find((c) => c.id === itemId);
     return { record, itemId, name: catalogItem?.name || itemId };
   });
+
+  const allSelected = selectedItems.size === availableItems.length && availableItems.length > 0;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(availableItems.map((item) => item.id)));
+    }
+  };
+
+  const singularTitle =
+    title === "Amenities" ? "Amenity"
+    : title === "Activities" ? "Activity"
+    : title === "Languages" ? "Language"
+    : title === "Certifications" ? "Certification"
+    : title === "Dining Options" ? "Dining Option"
+    : title === "Safety Features" ? "Safety Feature"
+    : title === "Insurance Options" ? "Insurance Option"
+    : title === "House Rules" ? "House Rule"
+    : title === "Treatment Services" ? "Service"
+    : title;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -126,25 +147,23 @@ function FeaturePanel<C extends { id: string; name: string }, R extends { id: st
             return (
               <div
                 key={record.id}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-teal-50 border border-teal-200 rounded-lg text-xs font-medium text-teal-700"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-700"
               >
                 <span>{name}</span>
                 <button
                   onClick={async () => {
                     const itemId = getItemId(record);
                     if (onRemoveBatch) {
-                      // Use batch delete when available (even for single items)
                       await onRemoveBatch([itemId]);
                     } else {
-                      // Fallback to individual delete
                       await onRemove(record.id);
                     }
                   }}
                   disabled={isRemoving}
-                  className="text-teal-600 hover:text-teal-700 disabled:opacity-50"
+                  className="text-slate-400 hover:text-slate-600 disabled:opacity-50"
                 >
                   {isRemoving ? (
-                    <span className="w-3 h-3 border-2 border-teal-500 border-t-transparent rounded-full animate-spin inline-block" />
+                    <span className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin inline-block" />
                   ) : (
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -156,36 +175,53 @@ function FeaturePanel<C extends { id: string; name: string }, R extends { id: st
           })}
         </div>
       ) : (
-        <p className="text-xs text-slate-400">No {title.toLowerCase()} added yet.</p>
+        <p className="text-sm text-slate-500">No {title.toLowerCase()} added yet.</p>
       )}
 
       {/* Add Button with Multi-Select Dropdown */}
       {availableItems.length > 0 && (
-        <div className="relative inline-block" ref={dropdownRef}>
-          <button
-            type="button"
-            onClick={() => {
-              setShowDropdown(!showDropdown);
-              if (showDropdown) {
-                setSelectedItems(new Set());
-              }
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium text-white bg-teal-600 border border-teal-600 rounded-lg hover:bg-teal-700 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add {title.slice(0, -1)}
-            {showDropdown && (
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+        <div className="flex justify-start">
+          <div className="relative inline-block" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setShowDropdown(!showDropdown);
+                if (showDropdown) {
+                  setSelectedItems(new Set());
+                }
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-            )}
-          </button>
+              Add {singularTitle}
+              {showDropdown && (
+                <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                </svg>
+              )}
+            </button>
 
           {showDropdown && (
             <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-xl z-[9999] max-h-80 overflow-y-auto">
               <div className="p-2">
+                <div className="flex items-center justify-between px-3 py-2 mb-1 border-b border-slate-100">
+                  <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded accent-teal-600 cursor-pointer"
+                    />
+                    <span>Select all</span>
+                  </label>
+                  {availableItems.length > 0 && (
+                    <span className="text-[11px] text-slate-400">
+                      {availableItems.length} available
+                    </span>
+                  )}
+                </div>
                 <div className="max-h-60 overflow-y-auto mb-2">
                   {availableItems.map((item) => {
                     const isSelected = selectedItems.has(item.id);
@@ -221,11 +257,12 @@ function FeaturePanel<C extends { id: string; name: string }, R extends { id: st
               </div>
             </div>
           )}
+          </div>
         </div>
       )}
 
       {availableItems.length === 0 && activeItems.length > 0 && (
-        <p className="text-xs text-slate-400">All available {title.toLowerCase()} have been added.</p>
+        <p className="text-sm text-slate-500">All available {title.toLowerCase()} have been added.</p>
       )}
     </div>
   );

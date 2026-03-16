@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { listingsApi } from "@/services/listingService";
 import { listingImagesApi } from "@/services/listingImagesService";
-import type { ApiListing, ApiListingImage } from "@/types";
+import { BASE_URL } from "@/constants/config";
+import type { ApiListing, ApiListingImage, ApiCareType } from "@/types";
 import { CARE_TYPE_LABELS, CARE_TYPE_COLORS } from "@/types";
 import { Badge } from "@/components/admin/shared/Badge";
 
@@ -14,7 +14,7 @@ export default function AdminListingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   
-  const [listing, setListing] = useState<ApiListing | null>(null);
+  const [listing, setListing] = useState<any>(null);
   const [images, setImages] = useState<ApiListingImage[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -94,30 +94,45 @@ export default function AdminListingDetailPage() {
     );
   }
 
-  const listingImages = images.length > 0
-    ? images.sort((a, b) => a.display_order - b.display_order).map((img) =>
-        listingImagesApi.getImageUrl(img.image_url, img.id)
-      )
-    : ["https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80"];
+  // Helper to construct image URL using image_url from list and base URL
+  const getImageUrl = (imageUrl: string | null | undefined): string => {
+    // If image_url is already absolute, return as is
+    if (imageUrl && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
+      return imageUrl;
+    }
+    
+    // If image_url is relative (starts with /), prepend base URL (without /api/v1)
+    if (imageUrl && imageUrl.startsWith("/")) {
+      const baseUrl = BASE_URL.replace("/api/v1", "");
+      return `${baseUrl}${imageUrl}`;
+    }
+    
+    // Fallback to placeholder
+    return "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80";
+  };
 
-  const careTypeColor = CARE_TYPE_COLORS[listing.care_type] ?? "teal";
+  const listingImages = images.length > 0
+    ? images.sort((a, b) => a.display_order - b.display_order).map((img) => ({
+        url: getImageUrl(img.image_url),
+        alt: `${listing.title} image`
+      }))
+    : [{ url: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&q=80", alt: "Placeholder" }];
+
+  const careTypeColor = CARE_TYPE_COLORS[listing.care_type as ApiCareType] ?? "teal";
   const badgeColorClass = careTypeColor === "teal" ? "bg-teal-50 text-teal-700 border-teal-200" :
     careTypeColor === "purple" ? "bg-purple-50 text-purple-700 border-purple-200" :
     careTypeColor === "blue" ? "bg-blue-50 text-blue-700 border-blue-200" :
     "bg-orange-50 text-orange-700 border-orange-200";
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Action Bar */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <Badge status={listing.status} />
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-slate-600">
-              <span>Created: {new Date(listing.created_at).toLocaleDateString()}</span>
-              {listing.updated_at !== listing.created_at && (
-                <span>Updated: {new Date(listing.updated_at).toLocaleDateString()}</span>
-              )}
+              <span>Created At: {new Date(listing.created_at).toLocaleDateString()}</span>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -139,48 +154,41 @@ export default function AdminListingDetailPage() {
                 </button>
               </>
             )}
-            <Link
-              href={`/listings/${listing.id}`}
-              target="_blank"
-              className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg font-medium hover:bg-slate-50 transition-colors text-sm sm:text-base"
-            >
-              View Public Page
-            </Link>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left Column - Main Details */}
-        <div className="lg:col-span-2 space-y-6">
+      <div className="space-y-6">
           {/* Images */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2" style={{ minHeight: "300px", height: "400px" }}>
-              <div className="relative">
-                <Image
-                  src={listingImages[0] ?? listingImages[0]}
-                  alt={listing.title}
-                  fill
-                  className="object-cover rounded-lg"
-                  sizes="(max-width: 640px) 100vw, 50vw"
-                />
-              </div>
-              <div className="grid grid-rows-2 gap-2">
-                {listingImages.slice(1, 3).map((img, i) => (
-                  <div key={i} className="relative">
-                    <Image
-                      src={img}
-                      alt={`${listing.title} ${i + 2}`}
-                      fill
-                      className="object-cover rounded-lg"
-                      sizes="(max-width: 640px) 100vw, 50vw"
-                    />
+          {listingImages.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2 min-h-[300px]">
+                <div className="h-[300px] sm:h-[400px] rounded-lg overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={listingImages[0].url}
+                    alt={listingImages[0].alt}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {listingImages.length > 1 && (
+                  <div className="grid grid-rows-2 gap-2">
+                    {listingImages.slice(1, 3).map((img, i) => (
+                      <div key={i} className="h-[145px] sm:h-[195px] rounded-lg overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={img.url}
+                          alt={img.alt}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Basic Info */}
           <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
@@ -188,7 +196,7 @@ export default function AdminListingDetailPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${badgeColorClass}`}>
-                    {CARE_TYPE_LABELS[listing.care_type] ?? listing.care_type}
+                    {CARE_TYPE_LABELS[listing.care_type as ApiCareType] ?? listing.care_type}
                   </span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2 break-words">{listing.title}</h1>
@@ -286,56 +294,146 @@ export default function AdminListingDetailPage() {
               )}
             </div>
           </div>
-        </div>
 
-        {/* Right Column - Metadata */}
-        <div className="space-y-6">
-          {/* System Info */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">System Information</h2>
-            <div className="space-y-3 text-sm">
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Listing ID</p>
-                <p className="font-mono text-xs text-slate-700 break-all">{listing.id}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Provider ID</p>
-                <p className="font-mono text-xs text-slate-700 break-all">{listing.provider_id}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Status</p>
-                <Badge status={listing.status} />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Created At</p>
-                <p className="text-slate-700">{new Date(listing.created_at).toLocaleString()}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Updated At</p>
-                <p className="text-slate-700">{new Date(listing.updated_at).toLocaleString()}</p>
+          {/* Amenities */}
+          {listing.amenities && listing.amenities.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Amenities ({listing.amenities.length})</h2>
+              <div className="flex flex-wrap gap-2">
+                {listing.amenities.map((item: any) => (
+                  <span key={item.id} className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-700">
+                    {item.amenity?.name || 'Unknown'}
+                  </span>
+                ))}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Location Data */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Location Data</h2>
-            <div className="space-y-2 text-sm">
-              <div>
-                <span className="text-slate-500">Address: </span>
-                <span className="text-slate-700 break-words">{listing.address}</span>
-              </div>
-              <div>
-                <span className="text-slate-500">City: </span>
-                <span className="text-slate-700">{listing.city}</span>
-              </div>
-              <div>
-                <span className="text-slate-500">State: </span>
-                <span className="text-slate-700">{listing.state}</span>
+          {/* Activities */}
+          {listing.activities && listing.activities.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Activities ({listing.activities.length})</h2>
+              <div className="flex flex-wrap gap-2">
+                {listing.activities.map((item: any) => (
+                  <span key={item.id} className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-700">
+                    {item.activity?.name || 'Unknown'}
+                  </span>
+                ))}
               </div>
             </div>
-          </div>
-        </div>
+          )}
+
+          {/* Languages */}
+          {listing.languages && listing.languages.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Languages ({listing.languages.length})</h2>
+              <div className="flex flex-wrap gap-2">
+                {listing.languages.map((item: any) => (
+                  <span key={item.id} className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-700">
+                    {item.language?.name || 'Unknown'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Certifications */}
+          {listing.certifications && listing.certifications.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Certifications ({listing.certifications.length})</h2>
+              <div className="flex flex-wrap gap-2">
+                {listing.certifications.map((item: any) => (
+                  <span key={item.id} className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-700">
+                    {item.certification?.name || 'Unknown'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Dining Options */}
+          {listing.dining_options && listing.dining_options.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Dining Options ({listing.dining_options.length})</h2>
+              <div className="flex flex-wrap gap-2">
+                {listing.dining_options.map((item: any) => (
+                  <span key={item.id} className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-700">
+                    {item.dining_option?.name || 'Unknown'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Safety Features */}
+          {listing.safety_features && listing.safety_features.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Safety Features ({listing.safety_features.length})</h2>
+              <div className="flex flex-wrap gap-2">
+                {listing.safety_features.map((item: any) => (
+                  <span key={item.id} className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-700">
+                    {item.safety_feature?.name || 'Unknown'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Insurance Options */}
+          {listing.insurance_options && listing.insurance_options.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Insurance Options ({listing.insurance_options.length})</h2>
+              <div className="flex flex-wrap gap-2">
+                {listing.insurance_options.map((item: any) => (
+                  <span key={item.id} className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-700">
+                    {item.insurance_option?.name || 'Unknown'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* House Rules */}
+          {listing.house_rules && listing.house_rules.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">House Rules ({listing.house_rules.length})</h2>
+              <div className="flex flex-wrap gap-2">
+                {listing.house_rules.map((item: any) => (
+                  <span key={item.id} className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-700">
+                    {item.house_rule?.name || 'Unknown'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Equipment */}
+          {listing.equipment && listing.equipment.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Equipment ({listing.equipment.length})</h2>
+              <div className="flex flex-wrap gap-2">
+                {listing.equipment.map((item: any) => (
+                  <span key={item.id} className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-700">
+                    {item.equipment?.name || 'Unknown'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Services */}
+          {listing.services && listing.services.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Treatment Services ({listing.services.length})</h2>
+              <div className="flex flex-wrap gap-2">
+                {listing.services.map((item: any) => (
+                  <span key={item.id} className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-700">
+                    {item.treatment_service?.name || 'Unknown'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
       </div>
     </div>
   );

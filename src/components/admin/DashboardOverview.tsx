@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "./shared/Badge";
 import { DashboardStats } from "./DashboardStats";
 import { DashboardCharts } from "./DashboardCharts";
@@ -77,7 +78,11 @@ export function DashboardOverview({
               <p className="text-center py-8 text-sm text-slate-400">No pending listings</p>
             ) : (
               pendingListings.map((l) => (
-                <div key={l.id} className="flex items-center justify-between px-4 sm:px-5 py-3">
+                <Link 
+                  key={l.id} 
+                  href={`/admin/listings/${l.id}`}
+                  className="flex items-center justify-between px-4 sm:px-5 py-3 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-900 truncate">{l.title}</p>
                     <p className="text-xs text-slate-400">
@@ -86,14 +91,8 @@ export function DashboardOverview({
                   </div>
                   <div className="flex items-center gap-2 ml-2">
                     <Badge status="PENDING" />
-                    <button 
-                      onClick={() => onActivate(l.id)}
-                      className="text-xs font-medium px-2.5 py-1 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors whitespace-nowrap"
-                    >
-                      Approve
-                    </button>
                   </div>
-                </div>
+                </Link>
               ))
             )}
           </div>
