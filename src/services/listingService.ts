@@ -21,17 +21,19 @@ export interface ListingsFilter {
 export const listingsApi = {
   list: (params?: ListingsFilter): Promise<ApiListing[]> => {
     const q = new URLSearchParams();
+    // Always include status=ACTIVE by default
+    q.set("status", "ACTIVE");
     if (params) {
       Object.entries(params).forEach(([k, v]) => {
         if (v !== undefined && v !== "") q.set(k, String(v));
       });
     }
     const qs = q.toString();
-    return api.get<ApiListing[]>(`/listings${qs ? `?${qs}` : ""}`);
+    return api.get<ApiListing[]>(`/listings?${qs}`);
   },
 
   featured: (): Promise<ApiListing[]> =>
-    api.get<ApiListing[]>("/listings/featured"),
+    api.get<ApiListing[]>("/listings/featured?status=ACTIVE"),
 
   getById: (id: string): Promise<ApiListing> =>
     api.get<ApiListing>(`/listings/${id}`),
