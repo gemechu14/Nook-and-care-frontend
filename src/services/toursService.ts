@@ -3,6 +3,7 @@ import type { ApiTour } from "@/types/listing";
 
 export interface CreateTourRequest {
   listing_id: string;
+  booked_by_user_id: string;
   tour_type: "IN_PERSON" | "VIRTUAL";
   scheduled_at: string;
   notes?: string;
@@ -10,8 +11,8 @@ export interface CreateTourRequest {
 
 export const toursApi = {
   list: (params?: {
-    skip?: number;
-    limit?: number;
+    page?: number;
+    size?: number;
     status?: string;
   }): Promise<ApiTour[]> => {
     const q = new URLSearchParams();

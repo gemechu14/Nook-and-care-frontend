@@ -128,6 +128,13 @@ export interface ApiTour {
   scheduled_at: string;
   status: TourStatus;
   notes: string | null;
+  booked_by_user_id?: string;
+  booked_by?: {
+    id: string;
+    full_name: string;
+    phone: string | null;
+    email: string | null;
+  };
   created_at: string;
   updated_at: string;
   // Extended fields returned by some API responses

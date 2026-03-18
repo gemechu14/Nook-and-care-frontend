@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/admin/shared/Badge";
 import type { ApiListing, ApiTour, ApiProvider } from "@/types";
 
@@ -100,15 +101,30 @@ export function DashboardOverview({ stats, listings, tours, provider, loading }:
               <p className="text-center py-8 text-sm text-slate-400">No tours yet</p>
             ) : (
               recentTours.map((t) => (
-                <div key={t.id} className="flex items-center justify-between px-4 sm:px-5 py-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-900">{t.family_name || "Family Member"}</p>
-                    <p className="text-xs text-slate-400">
-                      {t.preferred_date ? new Date(t.preferred_date).toLocaleDateString() : "TBD"}
-                    </p>
+                <Link
+                  key={t.id}
+                  href={`/providers/dashboard/tours/${t.id}`}
+                  className="block px-4 sm:px-5 py-3 hover:bg-slate-50/60 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
+                        {t.booked_by?.full_name || t.family_name || "—"}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5 truncate">
+                        {t.scheduled_at ? new Date(t.scheduled_at).toLocaleString() : t.preferred_date ? new Date(t.preferred_date).toLocaleDateString() : "TBD"}
+                        <span className="mx-2 text-slate-300">•</span>
+                        {t.tour_type === "VIRTUAL" ? "Virtual" : "In person"}
+                      </p>
+                    </div>
+                    <div className="shrink-0 flex items-center gap-2">
+                      <Badge status={t.status} />
+                      <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
                   </div>
-                  <Badge status={t.status} />
-                </div>
+                </Link>
               ))
             )}
           </div>

@@ -628,6 +628,7 @@ export default function ListingDetailPage() {
     try {
       await toursApi.create({
         listing_id: id,
+        booked_by_user_id: user.id,
         tour_type: tourForm.tourType,
         scheduled_at: scheduledAt,
         notes: tourForm.requests || undefined,

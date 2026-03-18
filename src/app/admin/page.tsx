@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -44,7 +44,7 @@ export default function AdminDashboard() {
       const results = await Promise.allSettled([
         listingsApi.list({ limit: 100 }),
         providersApi.list({ limit: 100 }),
-        toursApi.list({ limit: 100 }),
+        toursApi.list({ page: 1, size: 100 }),
         reportsApi.list({ limit: 100 }),
       ]);
 

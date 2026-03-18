@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -9,7 +9,6 @@ import { providersApi } from "@/features/providers/services";
 import { toursApi } from "@/services/toursService";
 import { listingImagesApi } from "@/services/listingImagesService";
 import type { ApiListing, ApiProvider, ApiTour, ApiListingImage } from "@/types";
-import { Badge } from "@/components/admin/shared/Badge";
 import { Loader } from "@/components/admin/shared/Loader";
 import { DashboardOverview } from "@/components/provider/DashboardOverview";
 import { ListingsSection } from "@/components/provider/sections/ListingsSection";
@@ -37,10 +36,22 @@ export default function ProviderDashboard() {
     if (!user) return;
     setPageLoading(true);
     try {
+      const fetchAllTours = async (): Promise<ApiTour[]> => {
+        const size = 100;
+        const maxPages = 200; // hard cap to avoid infinite loops
+        const all: ApiTour[] = [];
+        for (let page = 1; page <= maxPages; page++) {
+          const batch = await toursApi.list({ page, size });
+          all.push(...batch);
+          if (batch.length < size) break;
+        }
+        return all;
+      };
+
       const [provList, listingData, toursData] = await Promise.allSettled([
         providersApi.list({ limit: 100 }),
         listingsApi.list(),
-        toursApi.list(),
+        fetchAllTours(),
       ]);
       
       let userProvider: ApiProvider | null = null;
@@ -153,11 +164,11 @@ export default function ProviderDashboard() {
       ),
     },
     {
-      label: "Account Status",
-      value: provider.verification_status,
+      label: "Total Tours",
+      value: tours.length,
       icon: (
         <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
       ),
     },

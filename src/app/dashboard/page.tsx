@@ -193,7 +193,7 @@ export default function DashboardPage() {
     if (!user) { router.push("/login"); return; }
     (async () => {
       const [t, f, providers] = await Promise.allSettled([
-        toursApi.list({ limit: 10 }),
+        toursApi.list({ page: 1, size: 10 }),
         favoritesApi.list(),
         providersApi.list({ limit: 100 }),
       ]);
