@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -330,6 +330,8 @@ export default function ListingDetailPage() {
   const [activeTab, setActiveTab] = useState<"services" | "reviews" | "location">("services");
   const [scheduleTourOpen, setScheduleTourOpen] = useState(false);
   const [requestInfoOpen, setRequestInfoOpen] = useState(false);
+  const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
+  const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [tourSubmitting, setTourSubmitting] = useState(false);
   const [tourError, setTourError] = useState<string | null>(null);
@@ -430,10 +432,13 @@ export default function ListingDetailPage() {
         if (requestInfoOpen) {
           setRequestInfoOpen(false);
         }
+        if (photoViewerOpen) {
+          setPhotoViewerOpen(false);
+        }
       }
     };
 
-    if (scheduleTourOpen || requestInfoOpen) {
+    if (scheduleTourOpen || requestInfoOpen || photoViewerOpen) {
       document.addEventListener("keydown", handleEsc);
       // Prevent body scroll when modal is open
       document.body.style.overflow = "hidden";
@@ -443,7 +448,7 @@ export default function ListingDetailPage() {
       document.removeEventListener("keydown", handleEsc);
       document.body.style.overflow = "unset";
     };
-  }, [scheduleTourOpen, requestInfoOpen]);
+  }, [scheduleTourOpen, requestInfoOpen, photoViewerOpen]);
 
   const closeScheduleTour = () => {
     setScheduleTourOpen(false);
@@ -453,6 +458,12 @@ export default function ListingDetailPage() {
 
   const closeRequestInfo = () => {
     setRequestInfoOpen(false);
+  };
+
+  const openPhotoViewer = (startIndex: number) => {
+    const safeIndex = Number.isFinite(startIndex) ? Math.max(0, startIndex) : 0;
+    setPhotoViewerIndex(safeIndex);
+    setPhotoViewerOpen(true);
   };
 
   // Build a unified listing object from either API or mock data
@@ -505,6 +516,22 @@ export default function ListingDetailPage() {
     certifications: apiListing.certifications?.map(c => c.certification.name) ?? [],
     insuranceAccepted: apiListing.insurance_options?.map(i => i.insurance_option.name) ?? [],
   } : null);
+
+  // Keyboard navigation for photo viewer (depends on listing images)
+  useEffect(() => {
+    if (!photoViewerOpen) return;
+    if (!listing?.images?.length) return;
+    const handleKeys = (event: KeyboardEvent) => {
+      if (event.key === "ArrowLeft") {
+        setPhotoViewerIndex((i) => (i - 1 + listing.images.length) % listing.images.length);
+      }
+      if (event.key === "ArrowRight") {
+        setPhotoViewerIndex((i) => (i + 1) % listing.images.length);
+      }
+    };
+    document.addEventListener("keydown", handleKeys);
+    return () => document.removeEventListener("keydown", handleKeys);
+  }, [photoViewerOpen, listing?.images?.length]);
 
   if (pageLoading) return (
     <div className="min-h-screen bg-white pt-16 flex items-center justify-center">
@@ -701,7 +728,11 @@ export default function ListingDetailPage() {
                   className="object-cover opacity-60 transition-transform duration-300 group-hover:scale-110"
                 />
               )}
-              <button className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-white">
+              <button
+                type="button"
+                onClick={() => openPhotoViewer(0)}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-white"
+              >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm8 2a2 2 0 100 4 2 2 0 000-4z" />
                 </svg>
@@ -712,7 +743,11 @@ export default function ListingDetailPage() {
           
           {/* Mobile: Show "All Photos" button below main image */}
           <div className="md:hidden mt-2">
-            <button className="w-full flex items-center justify-center gap-2 py-3 bg-slate-800 text-white rounded-lg font-semibold hover:bg-slate-700 transition-colors">
+            <button
+              type="button"
+              onClick={() => openPhotoViewer(0)}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-slate-800 text-white rounded-lg font-semibold hover:bg-slate-700 transition-colors"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm8 2a2 2 0 100 4 2 2 0 000-4z" />
               </svg>
@@ -1428,6 +1463,102 @@ export default function ListingDetailPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Photo Viewer (Lightbox) */}
+      {photoViewerOpen && (
+        <div
+          className="fixed inset-0 z-[70] bg-black/90"
+          onClick={() => setPhotoViewerOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Photo viewer"
+        >
+          <div className="absolute inset-0" onClick={(e) => e.stopPropagation()}>
+            {/* Top bar */}
+            <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center justify-between">
+              <div className="text-white/80 text-sm font-medium">
+                {listing.images.length > 0 ? `${photoViewerIndex + 1} / ${listing.images.length}` : "0 / 0"}
+              </div>
+              <button
+                type="button"
+                onClick={() => setPhotoViewerOpen(false)}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                aria-label="Close viewer"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Main media */}
+            <div className="absolute inset-0 z-10 flex items-center justify-center px-4 sm:px-10">
+              <div className="relative w-full max-w-6xl h-[70vh] sm:h-[78vh]">
+                <Image
+                  src={listing.images[photoViewerIndex] ?? listing.images[0]}
+                  alt={`${listing.title} photo ${photoViewerIndex + 1}`}
+                  fill
+                  unoptimized
+                  className="object-contain"
+                  sizes="100vw"
+                />
+              </div>
+            </div>
+
+            {/* Prev/Next */}
+            {listing.images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setPhotoViewerIndex((i) => (i - 1 + listing.images.length) % listing.images.length)}
+                  className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                  aria-label="Previous photo"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPhotoViewerIndex((i) => (i + 1) % listing.images.length)}
+                  className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                  aria-label="Next photo"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </>
+            )}
+
+            {/* Thumbnails */}
+            {listing.images.length > 1 && (
+              <div className="absolute bottom-0 left-0 right-0 z-20 p-4">
+                <div className="mx-auto max-w-6xl">
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {listing.images.map((src, idx) => (
+                      <button
+                        key={`${src}-${idx}`}
+                        type="button"
+                        onClick={() => setPhotoViewerIndex(idx)}
+                        className={`relative h-16 w-24 shrink-0 rounded-lg overflow-hidden border transition-colors ${
+                          idx === photoViewerIndex ? "border-white" : "border-white/20 hover:border-white/60"
+                        }`}
+                        aria-label={`View photo ${idx + 1}`}
+                      >
+                        <Image src={src} alt="" fill unoptimized className="object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                  <div className="text-center text-xs text-white/60">
+                    Tip: use ← and → keys to navigate
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
     </div>
