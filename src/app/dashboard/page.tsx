@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/store/authStore";
 import { toursApi } from "@/services/toursService";
 import { favoritesApi } from "@/services/favoritesService";
+import { listingsApi } from "@/services/listingService";
 import { providersApi } from "@/features/providers/services";
-import type { ApiTour, ApiFavorite } from "@/types";
+import { BASE_URL } from "@/constants/config";
+import type { ApiTour, ApiFavorite, ApiListing } from "@/types";
 
 const US_STATES = [
   "Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut",
@@ -180,6 +182,7 @@ export default function DashboardPage() {
   const { user, loading, refreshUser } = useAuth();
   const [tours, setTours] = useState<ApiTour[]>([]);
   const [favorites, setFavorites] = useState<ApiFavorite[]>([]);
+  const [tourListings, setTourListings] = useState<Record<string, ApiListing>>({});
   const [pageLoading, setPageLoading] = useState(true);
   const [showProviderModal, setShowProviderModal] = useState(false);
   const [hasProvider, setHasProvider] = useState(false);
@@ -204,6 +207,32 @@ export default function DashboardPage() {
       setPageLoading(false);
     })();
   }, [user, loading, router]);
+
+  // Load listing details for tours (title, location, image)
+  useEffect(() => {
+    const isFamily = user?.role === "FAMILY" || user?.role === "SENIOR";
+    if (!user || !isFamily) return;
+    if (!tours.length) return;
+
+    const ids = Array.from(new Set(tours.map((t) => t.listing_id).filter(Boolean)));
+    const missing = ids.filter((id) => !tourListings[id]);
+    if (missing.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      const results = await Promise.allSettled(missing.map((id) => listingsApi.getById(id)));
+      if (cancelled) return;
+      setTourListings((prev) => {
+        const next = { ...prev };
+        results.forEach((r) => {
+          if (r.status === "fulfilled") next[r.value.id] = r.value;
+        });
+        return next;
+      });
+    })();
+
+    return () => { cancelled = true; };
+  }, [tours, user, tourListings]);
 
   const handleBecomeProvider = async (businessName: string, businessType: string, state: string) => {
     if (!user) return;
@@ -231,6 +260,16 @@ export default function DashboardPage() {
   );
 
   const isFamily = user?.role === "FAMILY" || user?.role === "SENIOR";
+  const baseUrl = BASE_URL.replace("/api/v1", "");
+
+  const getListingImageUrl = (listing?: ApiListing): string => {
+    if (!listing) return "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80";
+    const images = listing.images ?? [];
+    const primary = images.find((img) => img.is_primary) ?? images[0];
+    const url = primary?.image_url;
+    if (!url) return "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80";
+    return url.startsWith("http") ? url : `${baseUrl}${url}`;
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 pt-16">
@@ -241,37 +280,32 @@ export default function DashboardPage() {
         />
       )}
 
-      <div className="max-w-5xl mx-auto px-4 py-10">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">Welcome back, {user?.full_name?.split(" ")[0]}!</h1>
-          <p className="text-slate-500 text-sm mt-1">Here&apos;s a summary of your activity on Nook and Care.</p>
-        </div>
-
-        {/* Become a Provider Banner — only for FAMILY/SENIOR without provider */}
-        {isFamily && !hasProvider && !checkingProvider && (
-          <div className="mb-6 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl p-6 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-semibold text-lg">Have a senior care facility?</p>
-                <p className="text-teal-100 text-sm mt-0.5">List your facility and reach families looking for care.</p>
-              </div>
-            </div>
-            <button onClick={() => setShowProviderModal(true)}
-              className="bg-white text-teal-600 px-6 py-3 rounded-lg font-semibold hover:bg-teal-50 transition-colors shrink-0">
-              I&apos;m a Provider
-            </button>
+      <div className="max-w-6xl mx-auto px-4 py-10">
+        <div className="mb-8 flex items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+            <p className="text-slate-500 text-sm mt-1">Welcome back, {user?.full_name?.split(" ")[0]}.</p>
           </div>
-        )}
+          <div className="hidden sm:flex items-center gap-2">
+            <Link
+              href="/search"
+              className="inline-flex items-center justify-center px-4 py-2.5 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors"
+            >
+              Browse Listings
+            </Link>
+            <Link
+              href="/favorites"
+              className="inline-flex items-center justify-center px-4 py-2.5 border border-slate-300 bg-white text-slate-900 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+            >
+              Favorites
+            </Link>
+          </div>
+        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
           {[
-            { label: "Saved Communities", value: favorites.length, icon: "❤️", href: "/favorites" },
+            { label: "Saved Listings", value: favorites.length, icon: "❤️", href: "/favorites" },
             { label: "Tours Booked", value: tours.length, icon: "📅", href: "#tours" },
             { label: "Pending Tours", value: tours.filter((t) => t.status === "PENDING" || t.status === "APPROVED").length, icon: "⏳", href: "#tours" },
           ].map(({ label, value, icon, href }) => (
@@ -288,34 +322,60 @@ export default function DashboardPage() {
         <div id="tours" className="bg-white rounded-2xl border border-slate-200 shadow-sm mb-6">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
             <h2 className="font-semibold text-slate-900">Your Tour Requests</h2>
-            <Link href="/search" className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors">Browse communities →</Link>
+            <Link href="/search" className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors">Browse Listings →</Link>
           </div>
           {tours.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-slate-400 mb-3">No tours booked yet</p>
-              <Link href="/search" className="text-teal-600 hover:text-teal-700 text-sm font-medium transition-colors">Find a community to tour →</Link>
+              <Link href="/search" className="text-teal-600 hover:text-teal-700 text-sm font-medium transition-colors">Browse Listings →</Link>
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
               {tours.map((t) => (
-                <div key={t.id} className="flex items-center justify-between px-6 py-4">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">{t.tour_type.replace("_", " ")} Tour</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{new Date(t.scheduled_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <StatusBadge status={t.status} />
-                    {(t.status === "PENDING" || t.status === "APPROVED") && (
-                      <button
-                        onClick={async () => {
-                          await toursApi.cancel(t.id).catch(() => {});
-                          setTours((p) => p.map((x) => x.id === t.id ? { ...x, status: "CANCELLED" } : x));
-                        }}
-                        className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    )}
+                <div key={t.id} className="px-6 py-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={getListingImageUrl(tourListings[t.listing_id])}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      <div className="min-w-0">
+                        <Link
+                          href={`/listings/${t.listing_id}`}
+                          className="text-sm font-semibold text-slate-900 hover:text-teal-600 transition-colors truncate block"
+                        >
+                          {tourListings[t.listing_id]?.title ?? "Community tour"}
+                        </Link>
+                        <p className="text-xs text-slate-500 mt-0.5 truncate">
+                          {[
+                            tourListings[t.listing_id]?.address,
+                            tourListings[t.listing_id]?.city,
+                            tourListings[t.listing_id]?.state,
+                          ]
+                            .filter(Boolean)
+                            .join(", ") || "Location TBD"}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          <span className="font-medium text-slate-700">{t.tour_type.replace("_", " ")} Tour</span>
+                          <span className="mx-2 text-slate-300">•</span>
+                          {new Date(t.scheduled_at).toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0">
+                      <StatusBadge status={t.status} />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -326,28 +386,38 @@ export default function DashboardPage() {
         {/* Quick actions */}
         <div className="grid sm:grid-cols-2 gap-4">
           <Link href="/search"
-            className="bg-teal-600 text-white rounded-2xl p-5 hover:bg-teal-700 transition-colors flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            className="group bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-2xl p-5 hover:from-teal-700 hover:to-teal-800 transition-all flex items-center justify-between gap-4 shadow-sm hover:shadow-md">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center shrink-0 ring-1 ring-white/20">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <div>
-              <p className="font-semibold">Search Communities</p>
-              <p className="text-sm text-teal-100">Find verified senior care facilities</p>
+              <div className="min-w-0">
+                <p className="font-semibold truncate">Browse Listings</p>
+                <p className="text-sm text-teal-100 truncate">Explore verified senior care options</p>
+              </div>
             </div>
+            <svg className="w-5 h-5 text-white/90 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Link>
           <Link href="/profile"
-            className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-shadow flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
-              <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            className="group bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-all flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 ring-1 ring-slate-200">
+                <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
-            <div>
-              <p className="font-semibold text-slate-900">Edit Profile</p>
-              <p className="text-sm text-slate-500">Update your contact information</p>
+              <div className="min-w-0">
+                <p className="font-semibold text-slate-900 truncate">Profile</p>
+                <p className="text-sm text-slate-500 truncate">Manage your account details</p>
+              </div>
             </div>
+            <svg className="w-5 h-5 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Link>
         </div>
       </div>
