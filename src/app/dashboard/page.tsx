@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -271,7 +271,7 @@ export default function DashboardPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
           {[
-            { label: "Saved Communities", value: favorites.length, icon: "❤️", href: "/search" },
+            { label: "Saved Communities", value: favorites.length, icon: "❤️", href: "/favorites" },
             { label: "Tours Booked", value: tours.length, icon: "📅", href: "#tours" },
             { label: "Pending Tours", value: tours.filter((t) => t.status === "PENDING" || t.status === "APPROVED").length, icon: "⏳", href: "#tours" },
           ].map(({ label, value, icon, href }) => (

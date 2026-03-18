@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -184,6 +184,7 @@ export default function Header() {
   const isAssessmentPage = pathname === "/assessment";
   const isHowItWorksPage = pathname === "/how-it-works";
   const isResourcesPage = pathname === "/resources";
+  const isFavoritesPage = pathname === "/favorites";
   const isHomePage = pathname === "/";
   const isLoginPage = pathname === "/login";
   const isRegisterPage = pathname === "/register";
@@ -199,7 +200,18 @@ export default function Header() {
   // For non-home pages, always use white header
   // For home page, use white header when scrolled
   // Dashboard pages always use white header
-  const isWhiteHeader = isSearchPage || isListingPage || isAssessmentPage || isHowItWorksPage || isResourcesPage || isDashboardPage || isProviderDashboardPage || isAdminPage || isProfilePage || (isHomePage && isScrolled);
+  const isWhiteHeader =
+    isSearchPage ||
+    isListingPage ||
+    isAssessmentPage ||
+    isHowItWorksPage ||
+    isResourcesPage ||
+    isFavoritesPage ||
+    isDashboardPage ||
+    isProviderDashboardPage ||
+    isAdminPage ||
+    isProfilePage ||
+    (isHomePage && isScrolled);
   
   useEffect(() => {
     if (!isHomePage) return;
@@ -312,8 +324,11 @@ export default function Header() {
       { label: "List Your Facility", href: "/providers/dashboard?addListing=true" },
     );
   } else {
-    // FAMILY / SENIOR - only Find Care
-    navItems.push({ label: "Find Care", href: "/search" });
+    // FAMILY / SENIOR - Find Care + Favorites
+    navItems.push(
+      { label: "Find Care", href: "/search" },
+      { label: "Favorites", href: "/favorites" },
+    );
   }
 
   const initials = user?.full_name
