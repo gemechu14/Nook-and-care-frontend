@@ -8,6 +8,20 @@ export interface CreateReviewRequest {
   tour_id?: string;
 }
 
+export type ReviewsListingResponse =
+  | ApiReview[]
+  | {
+      items?: ApiReview[];
+      results?: ApiReview[];
+      data?: ApiReview[];
+      total?: number;
+      page?: number;
+      size?: number;
+      pages?: number;
+      next_page?: number | null;
+      prev_page?: number | null;
+    };
+
 export const reviewsApi = {
   list: (params?: {
     listing_id?: string;
@@ -36,6 +50,13 @@ export const reviewsApi = {
 
   delete: (id: string): Promise<void> =>
     api.delete<void>(`/reviews/${id}`),
+
+  /** Public listing reviews endpoint (paginated) */
+  listByListing: (listingId: string, params?: { page?: number; size?: number }): Promise<ReviewsListingResponse> => {
+    const page = params?.page ?? 1;
+    const size = params?.size ?? 20;
+    return api.get<ReviewsListingResponse>(`/reviews/listing/${listingId}?page=${page}&size=${size}`);
+  },
 };
 
 

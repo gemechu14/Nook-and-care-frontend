@@ -10,6 +10,7 @@ import { toursApi } from "@/services/toursService";
 import { useAuth } from "@/store/authStore";
 import type { ApiListing, ApiListingImage } from "@/types";
 import { CARE_TYPE_LABELS, CARE_TYPE_COLORS } from "@/types";
+import { ListingReviews } from "@/components/ui/ListingReviews";
 
 interface ListingDetail {
   id: string;
@@ -38,6 +39,8 @@ interface ListingDetail {
   safetyFeatures: string[];
   certifications: string[];
   insuranceAccepted: string[];
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 const mockListings: Record<string, ListingDetail> = {
@@ -515,6 +518,8 @@ export default function ListingDetailPage() {
     safetyFeatures: apiListing.safety_features?.map(s => s.safety_feature.name) ?? [],
     certifications: apiListing.certifications?.map(c => c.certification.name) ?? [],
     insuranceAccepted: apiListing.insurance_options?.map(i => i.insurance_option.name) ?? [],
+    latitude: apiListing.latitude ?? null,
+    longitude: apiListing.longitude ?? null,
   } : null);
 
   // Keyboard navigation for photo viewer (depends on listing images)
@@ -923,7 +928,7 @@ export default function ListingDetailPage() {
                     }`}
                   >
                     {tab === "services" && "Services & Amenities"}
-                    {tab === "reviews" && `Reviews (${listing.reviewCount})`}
+                    {tab === "reviews" && `Reviews `}
                     {tab === "location" && "Location"}
                   </button>
                 ))}
@@ -1050,12 +1055,16 @@ export default function ListingDetailPage() {
 
             {/* Tab: Reviews */}
             {activeTab === "reviews" && (
-              <div className="text-center py-16">
-                <svg className="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                <p className="text-slate-500">No reviews yet. Be the first to review!</p>
-              </div>
+              rawMock ? (
+                <div className="text-center py-16">
+                  <svg className="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <p className="text-slate-500">No reviews yet. Be the first to review!</p>
+                </div>
+              ) : (
+                <ListingReviews listingId={listing.id} pageSize={20} />
+              )
             )}
 
             {/* Tab: Location */}
@@ -1063,8 +1072,53 @@ export default function ListingDetailPage() {
               <div className="bg-white border border-slate-200 rounded-xl p-6">
                 <h3 className="text-base font-semibold text-slate-900 mb-2">Location</h3>
                 <p className="text-slate-600 text-sm mb-4">{listing.address}</p>
-                <div className="h-64 bg-slate-100 rounded-lg flex items-center justify-center">
-                  <p className="text-slate-400 text-sm">Map coming soon</p>
+                <div className="h-64 bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+                  {typeof listing.latitude === "number" && typeof listing.longitude === "number" ? (
+                    <iframe
+                      title="Map"
+                      className="w-full h-full"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://www.google.com/maps?q=${encodeURIComponent(
+                        `${listing.latitude},${listing.longitude}`
+                      )}&z=12&output=embed`}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 px-6 text-center">
+                      <svg className="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <p className="text-slate-500 text-sm">Map preview isn’t available for this listing yet.</p>
+                      <a
+                        className="text-teal-600 hover:text-teal-700 font-medium text-sm transition-colors"
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(listing.address)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open in Google Maps
+                      </a>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <p className="text-xs text-slate-500">
+                    {typeof listing.latitude === "number" && typeof listing.longitude === "number"
+                      ? `Coordinates: ${listing.latitude.toFixed(5)}, ${listing.longitude.toFixed(5)}`
+                      : "Coordinates not provided"}
+                  </p>
+                  <a
+                    className="text-teal-600 hover:text-teal-700 font-medium text-sm transition-colors"
+                    href={
+                      typeof listing.latitude === "number" && typeof listing.longitude === "number"
+                        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${listing.latitude},${listing.longitude}`)}`
+                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(listing.address)}`
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open in Google Maps
+                  </a>
                 </div>
               </div>
             )}

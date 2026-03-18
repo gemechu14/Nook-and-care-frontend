@@ -68,7 +68,7 @@ export function Sidebar({ activeNav, onNavChange, isOpen, onClose, onRefresh, is
   const { user, logout } = useAuth();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const avatarMenuRef = useRef<HTMLDivElement>(null);
-  const sidebarRef = useRef<HTMLAsideElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
