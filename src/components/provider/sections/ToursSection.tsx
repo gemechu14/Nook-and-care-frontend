@@ -5,47 +5,42 @@ import Link from "next/link";
 import { Badge } from "@/components/admin/shared/Badge";
 import { Loader } from "@/components/admin/shared/Loader";
 import type { ApiTour } from "@/types";
-import { toursApi } from "@/services/toursService";
+import {
+  useApproveTourMutation,
+  useCompleteTourMutation,
+  useGetToursQuery,
+} from "@/store/toursApi";
 
 interface ToursSectionProps {
-  tours: ApiTour[];
-  loading: boolean;
-  onRefresh: () => void;
+  providerId: string;
 }
 
-export function ToursSection({ tours, loading, onRefresh }: ToursSectionProps) {
-  if (loading) return <Loader />;
-
+export function ToursSection({ providerId }: ToursSectionProps) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<10 | 20 | 50 | 100>(10);
   const [query, setQuery] = useState("");
   const [menuOpenForId, setMenuOpenForId] = useState<string | null>(null);
 
-  const handleApprove = async (id: string) => {
-    try {
-      await toursApi.approve(id);
-      onRefresh();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to approve tour");
-    }
-  };
+  const {
+    data: toursPage,
+    isLoading,
+    isFetching,
+    isError,
+  } = useGetToursQuery(
+    { page, size: pageSize },
+    { skip: !providerId }
+  );
 
-  const handleComplete = async (id: string) => {
-    try {
-      await toursApi.complete(id);
-      onRefresh();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to complete tour");
-    }
-  };
+  const [approveTour] = useApproveTourMutation();
+  const [completeTour] = useCompleteTourMutation();
 
   const sortedTours = useMemo(() => {
-    return [...tours].sort((a, b) => {
+    return [...(toursPage?.items ?? [])].sort((a, b) => {
       const aTime = new Date(a.created_at || a.updated_at).getTime();
       const bTime = new Date(b.created_at || b.updated_at).getTime();
       return bTime - aTime;
     });
-  }, [tours]);
+  }, [toursPage?.items]);
 
   const filteredTours = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -66,24 +61,46 @@ export function ToursSection({ tours, loading, onRefresh }: ToursSectionProps) {
     });
   }, [query, sortedTours]);
 
-  const total = filteredTours.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const safePage = Math.min(page, totalPages);
-  const startIdx = (safePage - 1) * pageSize;
-  const endIdx = Math.min(total, startIdx + pageSize);
-  const pageTours = filteredTours.slice(startIdx, endIdx);
+  const pageTours = filteredTours;
+  const hasNextPage = toursPage?.hasNextPage ?? false;
+  const totalCount = toursPage?.total;
+  const totalPages = toursPage?.totalPages;
+  const startItem = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endItem =
+    totalCount !== null && totalCount !== undefined
+      ? Math.min(page * pageSize, totalCount)
+      : (page - 1) * pageSize + pageTours.length;
 
   const pageItems = useMemo((): Array<number | "..."> => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (!totalPages || totalPages <= 1) return [1];
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
     const items: Array<number | "..."> = [1];
-    const left = Math.max(2, safePage - 1);
-    const right = Math.min(totalPages - 1, safePage + 1);
+    const left = Math.max(2, page - 1);
+    const right = Math.min(totalPages - 1, page + 1);
     if (left > 2) items.push("...");
     for (let p = left; p <= right; p++) items.push(p);
     if (right < totalPages - 1) items.push("...");
     items.push(totalPages);
     return items;
-  }, [safePage, totalPages]);
+  }, [page, totalPages]);
+
+  const handleApprove = async (id: string) => {
+    try {
+      await approveTour(id).unwrap();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to approve tour");
+    }
+  };
+
+  const handleComplete = async (id: string) => {
+    try {
+      await completeTour(id).unwrap();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to complete tour");
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -91,8 +108,14 @@ export function ToursSection({ tours, loading, onRefresh }: ToursSectionProps) {
         <h2 className="text-lg font-bold text-slate-900">Tour Requests</h2>
         <p className="text-sm text-slate-500">Manage tour bookings from families</p>
       </div>
-      
-      {tours.length === 0 ? (
+
+      {isLoading && !toursPage?.items ? (
+        <Loader />
+      ) : isError ? (
+        <div className="bg-white rounded-xl border border-red-200 p-4 text-sm text-red-700">
+          Failed to load tour requests. Please try again.
+        </div>
+      ) : !toursPage || toursPage.items.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
           <p className="text-lg font-medium text-slate-900 mb-2">No tour requests yet</p>
           <p className="text-sm text-slate-500">Tour requests from families will appear here</p>
@@ -110,6 +133,7 @@ export function ToursSection({ tours, loading, onRefresh }: ToursSectionProps) {
                   onChange={(e) => { setQuery(e.target.value); setPage(1); }}
                   placeholder="Search name, phone, email, status..."
                   className="w-full h-10 pl-9 pr-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+                  disabled={isFetching}
                 />
               </div>
             </div>
@@ -220,9 +244,12 @@ export function ToursSection({ tours, loading, onRefresh }: ToursSectionProps) {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-5 py-4 border-t border-slate-100 bg-white">
             <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
               <div className="text-sm text-slate-500 whitespace-nowrap">
-                Showing <span className="font-medium text-slate-700">{total === 0 ? 0 : startIdx + 1}</span>–
-                <span className="font-medium text-slate-700">{endIdx}</span> of{" "}
-                <span className="font-medium text-slate-700">{total}</span>
+                Showing{" "}
+                <span className="font-medium text-slate-700">{startItem}</span>-
+                <span className="font-medium text-slate-700">{endItem}</span> of{" "}
+                <span className="font-medium text-slate-700">
+                  {totalCount ?? "many"}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-500 whitespace-nowrap">Rows per page</span>
@@ -245,38 +272,41 @@ export function ToursSection({ tours, loading, onRefresh }: ToursSectionProps) {
             <div className="flex items-center justify-between sm:justify-end gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={safePage === 1}
+                disabled={page === 1 || isFetching}
                 className="h-9 px-3 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Prev
               </button>
 
-              <div className="flex items-center gap-1">
-                {pageItems.map((it, idx) =>
-                  it === "..." ? (
-                    <span key={`dots-${idx}`} className="px-2 text-slate-400">
-                      …
-                    </span>
-                  ) : (
-                    <button
-                      key={it}
-                      onClick={() => setPage(it)}
-                      className={[
-                        "h-9 min-w-9 px-3 rounded-lg text-sm font-medium border",
-                        it === safePage
-                          ? "bg-teal-600 text-white border-teal-600"
-                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
-                      ].join(" ")}
-                    >
-                      {it}
-                    </button>
-                  )
-                )}
-              </div>
+              {totalPages && totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  {pageItems.map((it, idx) =>
+                    it === "..." ? (
+                      <span key={`dots-${idx}`} className="px-2 text-slate-400">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={it}
+                        onClick={() => setPage(it)}
+                        disabled={isFetching}
+                        className={[
+                          "h-9 min-w-9 px-3 rounded-lg text-sm font-medium border",
+                          it === page
+                            ? "bg-teal-600 text-white border-teal-600"
+                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
+                        ].join(" ")}
+                      >
+                        {it}
+                      </button>
+                    )
+                  )}
+                </div>
+              )}
 
               <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={safePage === totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                disabled={!hasNextPage || isFetching}
                 className="h-9 px-3 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next

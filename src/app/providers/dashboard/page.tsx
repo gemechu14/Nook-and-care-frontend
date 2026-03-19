@@ -18,6 +18,7 @@ import { NewListingModal } from "@/components/provider/modals/NewListingModal";
 import { ImageManagerModal } from "@/components/provider/modals/ImageManagerModal";
 import { PendingVerificationPanel } from "@/components/provider/PendingVerificationPanel";
 import { RejectedPanel } from "@/components/provider/RejectedPanel";
+import { dashboardApi, type DashboardSummary } from "@/services/dashboardService";
 
 export default function ProviderDashboard() {
   const router = useRouter();
@@ -27,7 +28,8 @@ export default function ProviderDashboard() {
 
   const [provider, setProvider] = useState<ApiProvider | null>(null);
   const [listings, setListings] = useState<ApiListing[]>([]);
-  const [tours, setTours] = useState<ApiTour[]>([]);
+  const [recentTours, setRecentTours] = useState<ApiTour[]>([]);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [showNewListing, setShowNewListing] = useState(false);
   const [imageManagerListing, setImageManagerListing] = useState<ApiListing | null>(null);
@@ -36,22 +38,10 @@ export default function ProviderDashboard() {
     if (!user) return;
     setPageLoading(true);
     try {
-      const fetchAllTours = async (): Promise<ApiTour[]> => {
-        const size = 100;
-        const maxPages = 200; // hard cap to avoid infinite loops
-        const all: ApiTour[] = [];
-        for (let page = 1; page <= maxPages; page++) {
-          const batch = await toursApi.list({ page, size });
-          all.push(...batch);
-          if (batch.length < size) break;
-        }
-        return all;
-      };
-
-      const [provList, listingData, toursData] = await Promise.allSettled([
+      const [provList, listingData, summaryData] = await Promise.allSettled([
         providersApi.list({ limit: 100 }),
         listingsApi.list(),
-        fetchAllTours(),
+        dashboardApi.summary(),
       ]);
       
       let userProvider: ApiProvider | null = null;
@@ -62,17 +52,30 @@ export default function ProviderDashboard() {
       
       if (listingData.status === "fulfilled") {
         if (userProvider) {
-          setListings(listingData.value.filter((l) => l.provider_id === userProvider!.id));
+          const providerListings = listingData.value.filter((l) => l.provider_id === userProvider.id);
+          setListings(providerListings);
+
+          // Load a small recent slice of tours for this provider for dashboard
+          const providerListingIds = providerListings.map((l) => l.id);
+          const size = 50;
+          const maxPages = 10;
+          const collected: ApiTour[] = [];
+          for (let page = 1; page <= maxPages && collected.length < 7; page++) {
+            const batch = await toursApi.list({ page, size });
+            collected.push(
+              ...batch.filter((t) => providerListingIds.includes(t.listing_id))
+            );
+            if (batch.length < size) break;
+          }
+          setRecentTours(collected.slice(0, 7));
         } else {
           setListings([]);
+          setRecentTours([]);
         }
       }
-      
-      if (toursData.status === "fulfilled" && userProvider) {
-        const providerListingIds = listingData.status === "fulfilled" 
-          ? listingData.value.filter((l) => l.provider_id === userProvider!.id).map((l) => l.id)
-          : [];
-        setTours(toursData.value.filter((t) => providerListingIds.includes(t.listing_id)));
+
+      if (summaryData.status === "fulfilled") {
+        setSummary(summaryData.value);
       }
     } finally {
       setPageLoading(false);
@@ -138,7 +141,7 @@ export default function ProviderDashboard() {
   const STAT_CARDS = [
     {
       label: "Total Listings",
-      value: listings.length,
+      value: summary?.total_listings ?? listings.length,
       icon: (
         <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -147,7 +150,7 @@ export default function ProviderDashboard() {
     },
     {
       label: "Active Listings",
-      value: activeListing,
+      value: summary?.active_listings ?? activeListing,
       icon: (
         <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -156,7 +159,7 @@ export default function ProviderDashboard() {
     },
     {
       label: "Pending Review",
-      value: pendingListings,
+      value: summary?.pending_listings ?? pendingListings,
       icon: (
         <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -165,7 +168,7 @@ export default function ProviderDashboard() {
     },
     {
       label: "Total Tours",
-      value: tours.length,
+      value: summary?.total_tours ?? 0,
       icon: (
         <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -197,7 +200,7 @@ export default function ProviderDashboard() {
         <DashboardOverview
           stats={STAT_CARDS}
           listings={listings}
-          tours={tours}
+          tours={recentTours}
           provider={provider}
           loading={pageLoading}
         />
@@ -214,9 +217,7 @@ export default function ProviderDashboard() {
 
       {activeNav === "tours" && (
         <ToursSection 
-          tours={tours} 
-          loading={pageLoading}
-          onRefresh={loadData}
+          providerId={provider.id}
         />
       )}
 

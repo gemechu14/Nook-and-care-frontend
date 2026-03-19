@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import ConditionalLayout from "@/components/layout/ConditionalLayout";
 import StoreInitializer from "@/store/StoreInitializer";
+import { AppProviders } from "@/components/layout/AppProviders";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,9 +20,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} bg-white text-slate-900 antialiased`} suppressHydrationWarning>
-        <StoreInitializer />
-        <ConditionalLayout>{children}</ConditionalLayout>
+      <body
+        className={`${inter.className} bg-white text-slate-900 antialiased`}
+        suppressHydrationWarning
+      >
+        <AppProviders>
+          <StoreInitializer />
+          <ConditionalLayout>{children}</ConditionalLayout>
+        </AppProviders>
       </body>
     </html>
   );

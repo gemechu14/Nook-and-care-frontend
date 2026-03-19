@@ -20,14 +20,14 @@ interface AuthState {
 
 // ─── Zustand store ────────────────────────────────────────────────────────────
 
-// Check for token synchronously on initialization
-const hasToken = typeof window !== "undefined" && !!tokenStorage.getAccess();
+// Check for token synchronously on initialization (disabled for SSR consistency)
+const hasToken = false;
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  // Only set loading to true if we have a token (need to verify it)
-  // If no token, we know immediately user is not logged in
-  loading: hasToken,
+  // Start in a loading state consistently on server and client;
+  // StoreInitializer will resolve this by calling refreshUser() on mount.
+  loading: true,
 
   refreshUser: async () => {
     const token = tokenStorage.getAccess();

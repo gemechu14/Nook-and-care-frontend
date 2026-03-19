@@ -15,8 +15,8 @@ interface DashboardOverviewProps {
 }
 
 export function DashboardOverview({ stats, listings, tours, provider, loading }: DashboardOverviewProps) {
-  const recentListings = listings.slice(0, 5);
-  const recentTours = tours.slice(0, 4);
+  const recentListings = listings.slice(0, 7);
+  const recentTours = tours.slice(0, 7);
 
   return (
     <div className="space-y-6">

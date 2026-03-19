@@ -128,11 +128,11 @@ export default function ProviderTourDetailPage() {
           {/* Family card */}
           <div className="lg:col-span-1 bg-white rounded-xl border border-slate-200 shadow-sm p-5">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center text-teal-700 font-bold">
+              {/* <div className="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center text-teal-700 font-bold">
                 {(fullName || "—").slice(0, 1).toUpperCase()}
-              </div>
+              </div> */}
               <div className="min-w-0">
-                <p className="text-sm text-slate-500">Booked by</p>
+                <p className="text-sm font-bold text-slate-900">Booked by</p>
                 <p className="text-lg font-bold text-slate-900 truncate">{fullName}</p>
               </div>
             </div>
