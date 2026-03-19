@@ -259,6 +259,10 @@ export type UpdateListingRequest = Partial<CreateListingRequest> & {
   is_featured?: boolean;
   latitude?: number | null;
   longitude?: number | null;
+  postal_code?: string | null;
+  currency?: string | null;
+  available_beds?: number | null;
+  staff_ratio?: string | null;
 };
 
 // ─── Care type label/color maps ───────────────────────────────────────────────

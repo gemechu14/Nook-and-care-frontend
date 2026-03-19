@@ -158,8 +158,12 @@ export default function ListingManagePage() {
         city: data.city ?? "",
         state: data.state ?? "",
         address: data.address ?? "",
+        postal_code: data.postal_code ?? "",
+        currency: data.currency ?? "USD",
         price: data.price ?? undefined,
         capacity: data.capacity ?? undefined,
+        available_beds: data.available_beds ?? undefined,
+        staff_ratio: data.staff_ratio ?? "",
         phone: data.phone ?? "",
         email: data.email ?? "",
         license_number: data.license_number ?? "",
@@ -320,6 +324,12 @@ export default function ListingManagePage() {
     const timer = window.setTimeout(() => setLocationSuccess(false), 2000);
     return () => window.clearTimeout(timer);
   }, [locationSuccess]);
+
+  useEffect(() => {
+    if (!detailsSuccess) return;
+    const timer = window.setTimeout(() => setDetailsSuccess(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [detailsSuccess]);
 
   const makeFeatureHandlers = <R extends { id: string }>(
     featureKey: keyof ActiveFeaturesState,

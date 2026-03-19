@@ -21,16 +21,27 @@ export function ListingDetailsForm({
   onChange,
 }: ListingDetailsFormProps) {
   const updateNumber = (
-    key: "price" | "capacity",
+    key: "price" | "capacity" | "available_beds",
     value: string,
-  ): Partial<UpdateListingRequest> => ({
-    [key]: Number(value) || undefined,
-  });
+  ): Partial<UpdateListingRequest> => {
+    const n = Number(value);
+    if (key === "available_beds") {
+      return {
+        available_beds: value === "" || Number.isNaN(n) ? undefined : n,
+      };
+    }
+    if (key === "price") return { price: n || undefined };
+    return { capacity: n || undefined };
+  };
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       {detailsSuccess && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-xs font-medium text-green-700">
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed right-4 top-4 z-50 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800 shadow-lg"
+        >
           Changes saved successfully.
         </div>
       )}
@@ -71,6 +82,18 @@ export function ListingDetailsForm({
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
             />
           </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-slate-600">Currency</label>
+            <select
+              value={detailsForm.currency ?? "USD"}
+              onChange={(e) => onChange({ currency: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+            </select>
+          </div>
           <div className="sm:col-span-2">
             <label className="mb-1.5 block text-xs font-medium text-slate-600">Description</label>
             <textarea
@@ -107,6 +130,14 @@ export function ListingDetailsForm({
             <input
               value={detailsForm.address ?? ""}
               onChange={(e) => onChange({ address: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-slate-600">Postal Code</label>
+            <input
+              value={detailsForm.postal_code ?? ""}
+              onChange={(e) => onChange({ postal_code: e.target.value })}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
             />
           </div>
@@ -152,6 +183,29 @@ export function ListingDetailsForm({
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
             />
           </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-slate-600">
+              Available Beds
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={detailsForm.available_beds ?? ""}
+              onChange={(e) => onChange(updateNumber("available_beds", e.target.value))}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-slate-600">
+              Staff Ratio
+            </label>
+            <input
+              value={detailsForm.staff_ratio ?? ""}
+              onChange={(e) => onChange({ staff_ratio: e.target.value })}
+              placeholder="e.g. 1:4"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
           <label className="sm:col-span-2 flex cursor-pointer items-center gap-2.5 rounded-lg border border-slate-200 bg-white p-3 text-xs font-medium text-slate-700">
             <input
               type="checkbox"
@@ -160,6 +214,15 @@ export function ListingDetailsForm({
               className="h-4 w-4 rounded accent-teal-600"
             />
             24-hour care available
+          </label>
+          <label className="sm:col-span-2 flex cursor-pointer items-center gap-2.5 rounded-lg border border-slate-200 bg-white p-3 text-xs font-medium text-slate-700">
+            <input
+              type="checkbox"
+              checked={Boolean(detailsForm.is_featured)}
+              onChange={(e) => onChange({ is_featured: e.target.checked })}
+              className="h-4 w-4 rounded accent-teal-600"
+            />
+            Featured listing
           </label>
         </div>
       </section>

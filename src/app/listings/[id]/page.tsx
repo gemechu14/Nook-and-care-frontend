@@ -39,6 +39,8 @@ interface ListingDetail {
   safetyFeatures: string[];
   certifications: string[];
   insuranceAccepted: string[];
+  /** Treatment services with optional price (from API listing.services) */
+  treatmentServices: Array<{ name: string; price: number | null }>;
   latitude?: number | null;
   longitude?: number | null;
 }
@@ -79,6 +81,7 @@ const mockListings: Record<string, ListingDetail> = {
     safetyFeatures: ["Emergency call system", "Fire safety", "Wheelchair accessible", "Secure entrance", "24-hour supervision"],
     certifications: ["State licensed", "Medicaid certified"],
     insuranceAccepted: ["Medicaid", "Private insurance", "Long-term care insurance"],
+    treatmentServices: [],
   },
   "2": {
     id: "2",
@@ -114,6 +117,7 @@ const mockListings: Record<string, ListingDetail> = {
     safetyFeatures: ["Emergency call system", "Fire safety", "Wheelchair accessible", "Wandering prevention", "Secure entrance", "Fall prevention", "24-hour security"],
     certifications: ["State licensed", "Medicare certified", "Medicaid certified"],
     insuranceAccepted: ["Medicare", "Medicaid", "Private insurance", "Long-term care insurance"],
+    treatmentServices: [],
   },
   "3": {
     id: "3",
@@ -152,6 +156,7 @@ const mockListings: Record<string, ListingDetail> = {
     safetyFeatures: ["Emergency call system", "Secure entrance", "Fire safety", "Fall prevention", "Wheelchair accessible", "24-hour security"],
     certifications: ["State licensed", "Medicare certified", "Joint Commission accredited"],
     insuranceAccepted: ["Medicare", "Private insurance", "Long-term care insurance"],
+    treatmentServices: [],
   },
   "4": {
     id: "4",
@@ -185,6 +190,7 @@ const mockListings: Record<string, ListingDetail> = {
     safetyFeatures: ["Emergency call system", "Fire safety", "Wheelchair accessible", "Secure entrance", "24-hour security"],
     certifications: ["State licensed"],
     insuranceAccepted: ["Private insurance", "Long-term care insurance"],
+    treatmentServices: [],
   },
 };
 
@@ -518,6 +524,10 @@ export default function ListingDetailPage() {
     safetyFeatures: apiListing.safety_features?.map(s => s.safety_feature.name) ?? [],
     certifications: apiListing.certifications?.map(c => c.certification.name) ?? [],
     insuranceAccepted: apiListing.insurance_options?.map(i => i.insurance_option.name) ?? [],
+    treatmentServices: apiListing.services?.map(s => ({
+      name: s.treatment_service.name,
+      price: s.price ?? null,
+    })) ?? [],
     latitude: apiListing.latitude ?? null,
     longitude: apiListing.longitude ?? null,
   } : null);
@@ -939,6 +949,35 @@ export default function ListingDetailPage() {
             {/* Tab: Services & Amenities */}
             {activeTab === "services" && (
               <div className="space-y-6">
+
+                {/* Treatment Services (with prices in parentheses) */}
+                {listing.treatmentServices.length > 0 && (
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6">
+                    <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      <h3 className="text-sm sm:text-base font-semibold text-slate-900">Treatment Services</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                      {listing.treatmentServices.map((service, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
+                          <span className="text-slate-700 text-sm">
+                            {service.name}
+                            {service.price != null ? (
+                              <span className="text-slate-500"> (${service.price.toLocaleString()})</span>
+                            ) : (
+                              <span className="text-slate-500"> (Price on request)</span>
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Care Services */}
                 <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 md:p-6">
