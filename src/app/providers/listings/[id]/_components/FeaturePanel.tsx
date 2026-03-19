@@ -180,7 +180,7 @@ export function FeaturePanel<C extends { id: string; name: string }, R extends {
           </button>
 
           {showDropdown && (
-            <div className="absolute left-0 top-full z-50 mt-2 w-72 max-h-80 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-xl">
+            <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-lg border border-slate-200 bg-white shadow-xl">
               <div className="p-2">
                 <div className="mb-1 flex items-center justify-between border-b border-slate-100 px-3 py-2">
                   <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-700">
@@ -195,7 +195,7 @@ export function FeaturePanel<C extends { id: string; name: string }, R extends {
                   <span className="text-[11px] text-slate-400">{availableItems.length} available</span>
                 </div>
 
-                <div className="mb-2 max-h-60 overflow-y-auto">
+                <div className="mb-2 max-h-72 overflow-y-auto pr-1">
                   {availableItems.map((item) => {
                     const selected = selectedItems.has(item.id);
                     return (

@@ -315,6 +315,12 @@ export default function ListingManagePage() {
     }
   };
 
+  useEffect(() => {
+    if (!locationSuccess) return;
+    const timer = window.setTimeout(() => setLocationSuccess(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [locationSuccess]);
+
   const makeFeatureHandlers = <R extends { id: string }>(
     featureKey: keyof ActiveFeaturesState,
     addFn: (data: Record<string, unknown>) => Promise<R>,

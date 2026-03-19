@@ -9,8 +9,24 @@ export interface CreateTourRequest {
   notes?: string;
 }
 
+type ToursListResponse =
+  | ApiTour[]
+  | {
+      items?: ApiTour[];
+      results?: ApiTour[];
+      data?: ApiTour[];
+    };
+
+function normalizeToursListResponse(payload: ToursListResponse): ApiTour[] {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.items)) return payload.items;
+  if (Array.isArray(payload.results)) return payload.results;
+  if (Array.isArray(payload.data)) return payload.data;
+  return [];
+}
+
 export const toursApi = {
-  list: (params?: {
+  list: async (params?: {
     page?: number;
     size?: number;
     status?: string;
@@ -21,7 +37,8 @@ export const toursApi = {
         ([k, v]) => v !== undefined && q.set(k, String(v))
       );
     const qs = q.toString();
-    return api.get<ApiTour[]>(`/tours${qs ? `?${qs}` : ""}`);
+    const res = await api.get<ToursListResponse>(`/tours${qs ? `?${qs}` : ""}`);
+    return normalizeToursListResponse(res);
   },
 
   getById: (id: string): Promise<ApiTour> =>
