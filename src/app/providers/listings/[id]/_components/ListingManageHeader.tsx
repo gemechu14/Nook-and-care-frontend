@@ -54,24 +54,7 @@ export function ListingManageHeader({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white/85 p-3">
-          <p className="text-xs font-medium text-slate-500">Monthly price</p>
-          <p className="mt-1 text-lg font-semibold text-slate-900">
-            {listing.price ? `$${listing.price.toLocaleString()}` : "Not set"}
-          </p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white/85 p-3">
-          <p className="text-xs font-medium text-slate-500">Capacity</p>
-          <p className="mt-1 text-lg font-semibold text-slate-900">
-            {listing.capacity ?? "Not set"}
-          </p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white/85 p-3">
-          <p className="text-xs font-medium text-slate-500">Uploaded images</p>
-          <p className="mt-1 text-lg font-semibold text-slate-900">{imageCount}</p>
-        </div>
-      </div>
+      {/* Stats cards intentionally hidden to reduce vertical scroll. */}
     </section>
   );
 }

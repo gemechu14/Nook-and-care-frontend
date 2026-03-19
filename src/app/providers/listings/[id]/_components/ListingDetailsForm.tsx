@@ -82,18 +82,6 @@ export function ListingDetailsForm({
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
             />
           </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-600">Currency</label>
-            <select
-              value={detailsForm.currency ?? "USD"}
-              onChange={(e) => onChange({ currency: e.target.value })}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
-            </select>
-          </div>
           <div className="sm:col-span-2">
             <label className="mb-1.5 block text-xs font-medium text-slate-600">Description</label>
             <textarea
@@ -214,15 +202,6 @@ export function ListingDetailsForm({
               className="h-4 w-4 rounded accent-teal-600"
             />
             24-hour care available
-          </label>
-          <label className="sm:col-span-2 flex cursor-pointer items-center gap-2.5 rounded-lg border border-slate-200 bg-white p-3 text-xs font-medium text-slate-700">
-            <input
-              type="checkbox"
-              checked={Boolean(detailsForm.is_featured)}
-              onChange={(e) => onChange({ is_featured: e.target.checked })}
-              className="h-4 w-4 rounded accent-teal-600"
-            />
-            Featured listing
           </label>
         </div>
       </section>
