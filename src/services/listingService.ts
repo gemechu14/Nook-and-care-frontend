@@ -16,15 +16,19 @@ export interface ListingsFilter {
   is_featured?: boolean;
   status?: string;
   search?: string;
+  include_all_statuses?: boolean;
 }
 
 export const listingsApi = {
   list: (params?: ListingsFilter): Promise<ApiListing[]> => {
     const q = new URLSearchParams();
-    // Always include status=ACTIVE by default
-    q.set("status", "ACTIVE");
+    const shouldDefaultToActive = !params?.include_all_statuses && params?.status === undefined;
+    if (shouldDefaultToActive) {
+      q.set("status", "ACTIVE");
+    }
     if (params) {
       Object.entries(params).forEach(([k, v]) => {
+        if (k === "include_all_statuses") return;
         if (v !== undefined && v !== "") q.set(k, String(v));
       });
     }

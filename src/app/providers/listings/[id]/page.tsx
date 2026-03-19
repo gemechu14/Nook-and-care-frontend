@@ -476,7 +476,7 @@ export default function ListingManagePage() {
     <main className="space-y-6">
       <ListingManageHeader listing={listing} imageCount={images.length} />
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="space-y-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">

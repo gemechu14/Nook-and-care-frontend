@@ -20,6 +20,7 @@ export function ListingImagesTab({ listing, images, onRefresh }: ListingImagesTa
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [settingPrimaryId, setSettingPrimaryId] = useState<string | null>(null);
   const [previewImages, setPreviewImages] = useState<PreviewImage[]>([]);
   const [fullscreenImage, setFullscreenImage] = useState<{ src: string; alt: string } | null>(
     null,
@@ -29,10 +30,10 @@ export function ListingImagesTab({ listing, images, onRefresh }: ListingImagesTa
     const files = rawFiles.filter((file) => file.type.startsWith("image/"));
     if (files.length === 0) return;
 
-    const nextPreviews: PreviewImage[] = files.map((file, index) => ({
+    const nextPreviews: PreviewImage[] = files.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
-      isPrimary: previewImages.length === 0 && images.length === 0 && index === 0,
+      isPrimary: false,
     }));
     setPreviewImages((prev) => [...prev, ...nextPreviews]);
   };
@@ -53,7 +54,6 @@ export function ListingImagesTab({ listing, images, onRefresh }: ListingImagesTa
       const removed = prev[index];
       const updated = prev.filter((_, i) => i !== index);
       URL.revokeObjectURL(removed.preview);
-      if (removed.isPrimary && updated.length > 0) updated[0].isPrimary = true;
       return updated;
     });
   };
@@ -77,13 +77,27 @@ export function ListingImagesTab({ listing, images, onRefresh }: ListingImagesTa
       const files = previewImages.map((item) => item.file);
       const displayOrders = previewImages.map((_, index) => startOrder + index);
       const primaryIndex = previewImages.findIndex((img) => img.isPrimary);
+      const isFirstUpload = images.length === 0;
+      const primaryIndexForUpload =
+        primaryIndex >= 0 ? primaryIndex : isFirstUpload ? 0 : undefined;
 
-      await listingImagesApi.uploadBatch(
+      const uploadedImages = await listingImagesApi.uploadBatch(
         listing.id,
         files,
         displayOrders,
-        primaryIndex >= 0 ? primaryIndex : undefined,
+        primaryIndexForUpload,
       );
+
+      // If user did not explicitly choose a primary in this upload batch,
+      // and this is not the first upload, force new images to non-primary
+      // to avoid auto-primary behavior on subsequent uploads.
+      if (primaryIndex < 0 && !isFirstUpload && uploadedImages.length > 0) {
+        await Promise.all(
+          uploadedImages.map((img) =>
+            listingImagesApi.update(img.id, { is_primary: false }).catch(() => undefined),
+          ),
+        );
+      }
 
       previewImages.forEach((img) => URL.revokeObjectURL(img.preview));
       setPreviewImages([]);
@@ -101,8 +115,28 @@ export function ListingImagesTab({ listing, images, onRefresh }: ListingImagesTa
   };
 
   const setPrimary = async (id: string) => {
-    await listingImagesApi.update(id, { is_primary: true }).catch(() => undefined);
-    onRefresh();
+    setError(null);
+    setSettingPrimaryId(id);
+    try {
+      const previousPrimaryIds = images
+        .filter((img) => img.is_primary && img.id !== id)
+        .map((img) => img.id);
+
+      if (previousPrimaryIds.length > 0) {
+        await Promise.all(
+          previousPrimaryIds.map((primaryId) =>
+            listingImagesApi.update(primaryId, { is_primary: false }),
+          ),
+        );
+      }
+
+      await listingImagesApi.update(id, { is_primary: true });
+      onRefresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to set primary image.");
+    } finally {
+      setSettingPrimaryId(null);
+    }
   };
 
   useEffect(() => {
@@ -261,9 +295,10 @@ export function ListingImagesTab({ listing, images, onRefresh }: ListingImagesTa
                               e.stopPropagation();
                               setPrimary(img.id);
                             }}
-                            className="w-full rounded-lg bg-white/95 px-2 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-teal-50 hover:text-teal-600"
+                            disabled={settingPrimaryId !== null}
+                            className="w-full rounded-lg bg-white/95 px-2 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-teal-50 hover:text-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            Set Primary
+                            {settingPrimaryId === img.id ? "Setting..." : "Set Primary"}
                           </button>
                         )}
                         <button

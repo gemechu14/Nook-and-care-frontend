@@ -40,7 +40,7 @@ export default function ProviderDashboard() {
     try {
       const [provList, listingData, summaryData] = await Promise.allSettled([
         providersApi.list({ limit: 100 }),
-        listingsApi.list(),
+        listingsApi.list({ include_all_statuses: true }),
         dashboardApi.summary(),
       ]);
       
