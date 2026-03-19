@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/admin/shared/Badge";
 import { Loader } from "@/components/admin/shared/Loader";
 import { CARE_TYPE_LABELS } from "@/types";
@@ -12,10 +13,40 @@ interface ListingsSectionProps {
 }
 
 export function ListingsSection({ listings, loading, onAddListing }: ListingsSectionProps) {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<10 | 20 | 50 | 100>(10);
+
+  useEffect(() => {
+    const nextTotalPages = Math.max(1, Math.ceil(listings.length / pageSize));
+    if (page > nextTotalPages) {
+      setPage(nextTotalPages);
+    }
+  }, [listings.length, page, pageSize]);
+
   if (loading) return <Loader />;
 
   const activeCount = listings.filter(l => l.status === "ACTIVE").length;
   const pendingCount = listings.filter(l => l.status === "PENDING").length;
+  const total = listings.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, total);
+  const pageListings = listings.slice(startIndex, endIndex);
+
+  const pageItems = useMemo((): Array<number | "..."> => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const items: Array<number | "..."> = [1];
+    const left = Math.max(2, safePage - 1);
+    const right = Math.min(totalPages - 1, safePage + 1);
+    if (left > 2) items.push("...");
+    for (let p = left; p <= right; p++) items.push(p);
+    if (right < totalPages - 1) items.push("...");
+    items.push(totalPages);
+    return items;
+  }, [safePage, totalPages]);
 
   return (
     <div className="space-y-4">
@@ -68,7 +99,7 @@ export function ListingsSection({ listings, loading, onAddListing }: ListingsSec
                 </tr>
               </thead>
               <tbody>
-                {listings.map((l) => (
+                {pageListings.map((l) => (
                   <tr key={l.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 sm:px-5 py-4">
                       <p className="font-medium text-slate-900 truncate max-w-[180px]">{l.title}</p>
@@ -103,6 +134,73 @@ export function ListingsSection({ listings, loading, onAddListing }: ListingsSec
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-5 py-4 border-t border-slate-100 bg-white">
+            <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
+              <div className="text-sm text-slate-500 whitespace-nowrap">
+                Showing{" "}
+                <span className="font-medium text-slate-700">{total === 0 ? 0 : startIndex + 1}</span>-
+                <span className="font-medium text-slate-700">{endIndex}</span> of{" "}
+                <span className="font-medium text-slate-700">{total}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-500 whitespace-nowrap">Rows per page</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    const next = Number(e.target.value) as 10 | 20 | 50 | 100;
+                    setPageSize(next);
+                    setPage(1);
+                  }}
+                  className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex items-center justify-between sm:justify-end gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                className="h-9 px-3 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Prev
+              </button>
+
+              <div className="flex items-center gap-1">
+                {pageItems.map((it, idx) =>
+                  it === "..." ? (
+                    <span key={`dots-${idx}`} className="px-2 text-slate-400">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={it}
+                      onClick={() => setPage(it)}
+                      className={[
+                        "h-9 min-w-9 px-3 rounded-lg text-sm font-medium border",
+                        it === safePage
+                          ? "bg-teal-600 text-white border-teal-600"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
+                      ].join(" ")}
+                    >
+                      {it}
+                    </button>
+                  )
+                )}
+              </div>
+
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                className="h-9 px-3 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       )}
