@@ -12,7 +12,7 @@ import type { ApiListing, ApiProvider, ApiTour, ApiReport } from "@/types";
 import { DashboardOverview } from "@/components/admin/DashboardOverview";
 import { ProvidersSection } from "@/components/admin/sections/ProvidersSection";
 import { ListingsSection } from "@/components/admin/sections/ListingsSection";
-import { ToursSection } from "@/components/admin/sections/ToursSection";
+import { SubscriptionsSection } from "@/components/admin/sections/SubscriptionsSection";
 import { ReportsSection } from "@/components/admin/sections/ReportsSection";
 import { Loader } from "@/components/admin/shared/Loader";
 
@@ -25,7 +25,7 @@ interface Stats {
 
 export default function AdminDashboard() {
   const searchParams = useSearchParams();
-  const activeNav = (searchParams.get("nav") || "dashboard") as "dashboard" | "providers" | "listings" | "tours" | "reports";
+  const activeNav = (searchParams.get("nav") || "dashboard") as "dashboard" | "providers" | "listings" | "subscriptions" | "reports";
 
   const [stats, setStats] = useState<Stats>({
     totalProviders: 0,
@@ -100,21 +100,6 @@ export default function AdminDashboard() {
       }));
     } catch (error) {
       console.error("Failed to verify provider:", error);
-    }
-  };
-
-  const handleReject = async (id: string) => {
-    try {
-      await providersApi.reject(id);
-      setProviders((p) =>
-        p.map((x) => (x.id === id ? { ...x, verification_status: "REJECTED" } : x))
-      );
-      setStats((s) => ({
-        ...s,
-        pendingProviders: Math.max(0, s.pendingProviders - 1),
-      }));
-    } catch (error) {
-      console.error("Failed to reject provider:", error);
     }
   };
 
@@ -200,21 +185,16 @@ export default function AdminDashboard() {
         <ProvidersSection
           providers={providers}
           onVerify={handleVerify}
-          onReject={handleReject}
           loading={dataLoading}
         />
       )}
 
       {activeNav === "listings" && (
-        <ListingsSection
-          listings={listings}
-          onActivate={handleActivate}
-          loading={dataLoading}
-        />
+        <ListingsSection loading={dataLoading} />
       )}
 
-      {activeNav === "tours" && (
-        <ToursSection tours={tours} loading={dataLoading} />
+      {activeNav === "subscriptions" && (
+        <SubscriptionsSection />
       )}
 
       {activeNav === "reports" && (
