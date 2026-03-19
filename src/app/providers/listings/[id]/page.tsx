@@ -520,13 +520,18 @@ export default function ListingManagePage() {
           ) : null}
 
           {activeTab === "features" ? (
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Lifestyle & Daily Living
-                </h4>
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-l-4 border-teal-500 pl-3">
+                  <h4 className="text-sm font-semibold text-slate-800">
+                    Lifestyle & Daily Living
+                  </h4>
+                  <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-700">
+                    4 groups
+                  </span>
+                </div>
                 <div className="grid gap-4 xl:grid-cols-2">
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <FeaturePanel
                       title="Amenities"
                       catalogItems={catalog.amenities}
@@ -543,7 +548,7 @@ export default function ListingManagePage() {
                       )}
                     />
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <FeaturePanel
                       title="Activities"
                       catalogItems={catalog.activities}
@@ -560,7 +565,7 @@ export default function ListingManagePage() {
                       )}
                     />
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <FeaturePanel
                       title="Languages"
                       catalogItems={catalog.languages}
@@ -577,7 +582,7 @@ export default function ListingManagePage() {
                       )}
                     />
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <FeaturePanel
                       title="Dining Options"
                       catalogItems={catalog.diningOptions}
@@ -597,12 +602,17 @@ export default function ListingManagePage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Compliance, Safety & Policy
-                </h4>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-l-4 border-amber-500 pl-3">
+                  <h4 className="text-sm font-semibold text-slate-800">
+                    Compliance, Safety & Policy
+                  </h4>
+                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                    4 groups
+                  </span>
+                </div>
                 <div className="grid gap-4 xl:grid-cols-2">
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <FeaturePanel
                       title="Certifications"
                       catalogItems={catalog.certifications}
@@ -619,7 +629,7 @@ export default function ListingManagePage() {
                       )}
                     />
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <FeaturePanel
                       title="Safety Features"
                       catalogItems={catalog.safetyFeatures}
@@ -636,7 +646,7 @@ export default function ListingManagePage() {
                       )}
                     />
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <FeaturePanel
                       title="Insurance Options"
                       catalogItems={catalog.insuranceOptions}
@@ -653,7 +663,7 @@ export default function ListingManagePage() {
                       )}
                     />
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <FeaturePanel
                       title="House Rules"
                       catalogItems={catalog.houseRules}
@@ -673,12 +683,17 @@ export default function ListingManagePage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Care Delivery
-                </h4>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-l-4 border-violet-500 pl-3">
+                  <h4 className="text-sm font-semibold text-slate-800">
+                    Care Delivery
+                  </h4>
+                  <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-semibold text-violet-700">
+                    2 groups
+                  </span>
+                </div>
                 <div className="grid gap-4 xl:grid-cols-2">
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <FeaturePanel
                       title="Equipment"
                       catalogItems={catalog.equipment}
@@ -695,7 +710,7 @@ export default function ListingManagePage() {
                       )}
                     />
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <FeaturePanel
                       title="Treatment Services"
                       catalogItems={catalog.services}
