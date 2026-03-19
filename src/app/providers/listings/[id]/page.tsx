@@ -389,6 +389,20 @@ export default function ListingManagePage() {
       : undefined,
   });
 
+  const addServicesWithPrice = async (items: { itemId: string; price: number }[]) => {
+    if (!listing || items.length === 0) return;
+    const payloads = items.map((item) => ({
+      listing_id: listing.id,
+      treatment_service_id: item.itemId,
+      price: item.price,
+    }));
+    const records = await listingFeaturesApi.services.addBatch(payloads);
+    setActiveFeatures((prev) => ({
+      ...prev,
+      services: [...prev.services, ...records],
+    }));
+  };
+
   const tabs: ListingTabItem[] = [
     {
       id: "details",
@@ -677,11 +691,16 @@ export default function ListingManagePage() {
                       catalogItems={catalog.services}
                       activeRecords={activeFeatures.services}
                       getItemId={(record) => record.treatment_service_id}
+                      getItemMetaLabel={(record) =>
+                        record.price !== null ? `$${record.price}` : null
+                      }
                       savingId={savingId}
+                      requirePriceOnAdd
+                      onAddBatchWithPrice={addServicesWithPrice}
                       {...makeFeatureHandlers(
                         "services",
                         listingFeaturesApi.services.add,
-                        listingFeaturesApi.services.addBatch,
+                        undefined,
                         listingFeaturesApi.services.removeBatch,
                         (itemId) => ({ listing_id: listing.id, treatment_service_id: itemId }),
                         (record) => record.treatment_service_id,

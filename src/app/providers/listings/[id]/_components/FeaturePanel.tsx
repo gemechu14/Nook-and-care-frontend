@@ -7,11 +7,14 @@ interface FeaturePanelProps<C extends { id: string; name: string }, R extends { 
   catalogItems: C[];
   activeRecords: R[];
   getItemId: (record: R) => string;
+  getItemMetaLabel?: (record: R) => string | null;
   onAdd: (itemId: string) => Promise<void>;
   onAddBatch?: (itemIds: string[]) => Promise<void>;
+  onAddBatchWithPrice?: (items: { itemId: string; price: number }[]) => Promise<void>;
   onRemove: (recordId: string) => Promise<void>;
   onRemoveBatch?: (itemIds: string[]) => Promise<void>;
   savingId: string | null;
+  requirePriceOnAdd?: boolean;
 }
 
 export function FeaturePanel<C extends { id: string; name: string }, R extends { id: string }>({
@@ -19,14 +22,19 @@ export function FeaturePanel<C extends { id: string; name: string }, R extends {
   catalogItems,
   activeRecords,
   getItemId,
+  getItemMetaLabel,
   onAdd,
   onAddBatch,
+  onAddBatchWithPrice,
   onRemove,
   onRemoveBatch,
   savingId,
+  requirePriceOnAdd = false,
 }: FeaturePanelProps<C, R>) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [itemPrices, setItemPrices] = useState<Record<string, string>>({});
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -48,7 +56,12 @@ export function FeaturePanel<C extends { id: string; name: string }, R extends {
   const activeItems = activeRecords.map((record) => {
     const itemId = getItemId(record);
     const item = catalogItems.find((catalogItem) => catalogItem.id === itemId);
-    return { record, itemId, name: item?.name ?? itemId };
+    return {
+      record,
+      itemId,
+      name: item?.name ?? itemId,
+      metaLabel: getItemMetaLabel?.(record) ?? null,
+    };
   });
 
   const allSelected =
@@ -59,6 +72,8 @@ export function FeaturePanel<C extends { id: string; name: string }, R extends {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
         setSelectedItems(new Set());
+        setItemPrices({});
+        setValidationError(null);
       }
     };
 
@@ -82,10 +97,19 @@ export function FeaturePanel<C extends { id: string; name: string }, R extends {
   const handleToggleSelection = (itemId: string) => {
     setSelectedItems((prev) => {
       const next = new Set(prev);
-      if (next.has(itemId)) next.delete(itemId);
-      else next.add(itemId);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+        setItemPrices((prevPrices) => {
+          const copy = { ...prevPrices };
+          delete copy[itemId];
+          return copy;
+        });
+      } else {
+        next.add(itemId);
+      }
       return next;
     });
+    if (validationError) setValidationError(null);
   };
 
   const handleSave = async () => {
@@ -96,7 +120,27 @@ export function FeaturePanel<C extends { id: string; name: string }, R extends {
 
     setIsSaving(true);
     try {
-      if (onAddBatch) {
+      if (requirePriceOnAdd) {
+        if (!onAddBatchWithPrice) {
+          throw new Error("Price-based batch handler is required.");
+        }
+
+        const payload = Array.from(selectedItems).map((itemId) => {
+          const parsed = Number(itemPrices[itemId]);
+          return { itemId, price: parsed };
+        });
+
+        const hasInvalid = payload.some(
+          (entry) => Number.isNaN(entry.price) || entry.price <= 0,
+        );
+        if (hasInvalid) {
+          setValidationError("Please enter a valid price for each selected service.");
+          setIsSaving(false);
+          return;
+        }
+
+        await onAddBatchWithPrice(payload);
+      } else if (onAddBatch) {
         await onAddBatch(Array.from(selectedItems));
       } else {
         for (const itemId of selectedItems) {
@@ -104,6 +148,8 @@ export function FeaturePanel<C extends { id: string; name: string }, R extends {
         }
       }
       setSelectedItems(new Set());
+      setItemPrices({});
+      setValidationError(null);
       setShowDropdown(false);
     } catch (error) {
       console.error("Failed to add items:", error);
@@ -129,7 +175,7 @@ export function FeaturePanel<C extends { id: string; name: string }, R extends {
 
       {activeItems.length > 0 ? (
         <div className="flex flex-wrap gap-2">
-          {activeItems.map(({ record, itemId, name }) => {
+          {activeItems.map(({ record, itemId, name, metaLabel }) => {
             const isRemoving = savingId === itemId;
             return (
               <div
@@ -137,6 +183,11 @@ export function FeaturePanel<C extends { id: string; name: string }, R extends {
                 className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700"
               >
                 <span>{name}</span>
+                {metaLabel ? (
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                    {metaLabel}
+                  </span>
+                ) : null}
                 <button
                   type="button"
                   onClick={async () => {
@@ -169,7 +220,11 @@ export function FeaturePanel<C extends { id: string; name: string }, R extends {
             type="button"
             onClick={() => {
               setShowDropdown(!showDropdown);
-              if (showDropdown) setSelectedItems(new Set());
+              if (showDropdown) {
+                setSelectedItems(new Set());
+                setItemPrices({});
+                setValidationError(null);
+              }
             }}
             className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700"
           >
@@ -199,21 +254,44 @@ export function FeaturePanel<C extends { id: string; name: string }, R extends {
                   {availableItems.map((item) => {
                     const selected = selectedItems.has(item.id);
                     return (
-                      <label
+                      <div
                         key={item.id}
-                        className="flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-xs text-slate-700 hover:bg-slate-50"
+                        className="rounded px-3 py-2 text-xs text-slate-700 hover:bg-slate-50"
                       >
-                        <input
-                          type="checkbox"
-                          checked={selected}
-                          onChange={() => handleToggleSelection(item.id)}
-                          className="h-4 w-4 rounded accent-teal-600"
-                        />
-                        <span className="flex-1">{item.name}</span>
-                      </label>
+                        <label className="flex cursor-pointer items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => handleToggleSelection(item.id)}
+                            className="h-4 w-4 rounded accent-teal-600"
+                          />
+                          <span className="flex-1">{item.name}</span>
+                        </label>
+                        {requirePriceOnAdd && selected ? (
+                          <div className="mt-2 pl-6">
+                            <input
+                              type="number"
+                              min="0.01"
+                              step="0.01"
+                              value={itemPrices[item.id] ?? ""}
+                              onChange={(event) =>
+                                setItemPrices((prev) => ({
+                                  ...prev,
+                                  [item.id]: event.target.value,
+                                }))
+                              }
+                              placeholder="Price"
+                              className="w-full rounded border border-slate-300 px-2 py-1 text-xs outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                            />
+                          </div>
+                        ) : null}
+                      </div>
                     );
                   })}
                 </div>
+                {validationError ? (
+                  <p className="mb-2 text-xs text-red-600">{validationError}</p>
+                ) : null}
 
                 <div className="flex items-center justify-between gap-2 border-t border-slate-200 pt-2">
                   <span className="text-xs text-slate-500">

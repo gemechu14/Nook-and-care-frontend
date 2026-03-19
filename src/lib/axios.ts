@@ -48,6 +48,22 @@ axiosInstance.interceptors.response.use(
       }
     }
 
+    // If token is invalid/expired, clear auth and force login.
+    const isInvalidCredentials =
+      status === 401 ||
+      detail.toLowerCase().includes("could not validate credentials") ||
+      detail.toLowerCase().includes("not authenticated");
+
+    if (isInvalidCredentials) {
+      tokenStorage.clear();
+      if (typeof window !== "undefined") {
+        const currentPath = window.location.pathname + window.location.search;
+        if (!window.location.pathname.startsWith("/login")) {
+          window.location.assign(`/login?next=${encodeURIComponent(currentPath)}`);
+        }
+      }
+    }
+
     return Promise.reject(new Error(detail));
   }
 );
