@@ -17,6 +17,7 @@ export default function AdminListingReadOnlyPage() {
   const [images, setImages] = useState<ApiListingImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [approving, setApproving] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -70,11 +71,37 @@ export default function AdminListingReadOnlyPage() {
   const coverImage = images.find((i) => i.is_primary) ?? images[0] ?? null;
   const coverImageUrl = coverImage ? toAbsoluteImageUrl(coverImage) : "";
 
+  const handleApprove = async () => {
+    if (!listing || listing.status !== "PENDING") return;
+    setApproving(true);
+    setError(null);
+    try {
+      const updated = await listingsApi.activate(listing.id);
+      setListing(updated);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to approve listing.");
+    } finally {
+      setApproving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <Link href="/admin?nav=listings" className="inline-flex items-center gap-2 text-sm font-medium text-teal-600 hover:text-teal-700">
-        <span aria-hidden>←</span> Back to listings
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link href="/admin?nav=listings" className="inline-flex items-center gap-2 text-sm font-medium text-teal-600 hover:text-teal-700">
+          <span aria-hidden>←</span> Back to listings
+        </Link>
+        {listing.status === "PENDING" && (
+          <button
+            type="button"
+            onClick={handleApprove}
+            disabled={approving}
+            className="h-9 px-3 rounded-lg border border-teal-200 bg-teal-50 text-teal-700 text-sm font-medium hover:bg-teal-100 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {approving ? "Approving..." : "Approve"}
+          </button>
+        )}
+      </div>
 
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
@@ -84,7 +111,9 @@ export default function AdminListingReadOnlyPage() {
             {CARE_TYPE_LABELS[listing.care_type]} · {[listing.city, listing.state].filter(Boolean).join(", ") || "Location pending"}
           </p>
         </div>
-        <Badge status={listing.status} />
+        <div className="flex items-center gap-2">
+          <Badge status={listing.status} />
+        </div>
       </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
