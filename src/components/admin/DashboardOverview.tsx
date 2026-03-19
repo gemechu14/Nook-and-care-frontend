@@ -3,19 +3,19 @@ import { Badge } from "./shared/Badge";
 import { DashboardStats } from "./DashboardStats";
 import { DashboardCharts } from "./DashboardCharts";
 import { CARE_TYPE_LABELS } from "@/types";
-import type { ApiListing, ApiTour } from "@/types";
+import type { ApiListing, ApiProvider, ApiTour } from "@/types";
 
 interface DashboardOverviewProps {
   stats: Array<{
     label: string;
     value: number;
     trend: string;
-    trendUp: boolean;
+    trendDirection: "up" | "down" | "flat";
     icon: React.ReactNode;
   }>;
   listings: ApiListing[];
   tours: ApiTour[];
-  providers: any[];
+  providers: ApiProvider[];
   loading: boolean;
   onActivate: (id: string) => void;
   onNavChange: (id: string) => void;
@@ -30,8 +30,18 @@ export function DashboardOverview({
   onActivate,
   onNavChange,
 }: DashboardOverviewProps) {
-  const pendingListings = listings.filter((l) => l.status === "PENDING").slice(0, 5);
-  const recentTours = tours.slice(0, 4);
+  const pendingListings = listings
+    .filter((l) => l.status === "PENDING")
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5);
+  const recentTours = tours
+    .slice()
+    .sort((a, b) => {
+      const aDate = new Date(a.scheduled_at || a.preferred_date || 0).getTime();
+      const bDate = new Date(b.scheduled_at || b.preferred_date || 0).getTime();
+      return bDate - aDate;
+    })
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -78,19 +88,26 @@ export function DashboardOverview({
               <p className="text-center py-8 text-sm text-slate-400">No pending listings</p>
             ) : (
               pendingListings.map((l) => (
-                <Link 
-                  key={l.id} 
+                <Link
+                  key={l.id}
                   href={`/admin/listings/${l.id}`}
-                  className="flex items-center justify-between px-4 sm:px-5 py-3 hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="block px-4 sm:px-5 py-3 hover:bg-slate-50/60 transition-colors"
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-900 truncate">{l.title}</p>
-                    <p className="text-xs text-slate-400">
-                      {CARE_TYPE_LABELS[l.care_type]} · {[l.city, l.state].filter(Boolean).join(", ")}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 ml-2">
-                    <Badge status="PENDING" />
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">{l.title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 truncate">
+                        {CARE_TYPE_LABELS[l.care_type]}{" "}
+                        <span className="mx-2 text-slate-300">•</span>
+                        {[l.city, l.state].filter(Boolean).join(", ") || "Location pending"}
+                      </p>
+                    </div>
+                    <div className="shrink-0 flex items-center gap-2">
+                      <Badge status="PENDING" />
+                      <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
                   </div>
                 </Link>
               ))
@@ -102,7 +119,7 @@ export function DashboardOverview({
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-slate-100">
             <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <span className="font-semibold text-slate-900">Recent Tours</span>
@@ -123,12 +140,29 @@ export function DashboardOverview({
               <p className="text-center py-8 text-sm text-slate-400">No tours yet</p>
             ) : (
               recentTours.map((t) => (
-                <div key={t.id} className="flex items-center justify-between px-4 sm:px-5 py-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-900">{t.tour_type.replace("_", " ")}</p>
-                    <p className="text-xs text-slate-400">{new Date(t.scheduled_at).toLocaleDateString()}</p>
+                <div key={t.id} className="px-4 sm:px-5 py-3 hover:bg-slate-50/60 transition-colors">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
+                        {t.booked_by?.full_name || t.family_name || "Family tour request"}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5 truncate">
+                        {t.scheduled_at
+                          ? new Date(t.scheduled_at).toLocaleString()
+                          : t.preferred_date
+                            ? new Date(t.preferred_date).toLocaleDateString()
+                            : "TBD"}
+                        <span className="mx-2 text-slate-300">•</span>
+                        {t.tour_type === "VIRTUAL" ? "Virtual" : "In person"}
+                      </p>
+                    </div>
+                    <div className="shrink-0 flex items-center gap-2">
+                      <Badge status={t.status} />
+                      <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
                   </div>
-                  <Badge status={t.status} />
                 </div>
               ))
             )}

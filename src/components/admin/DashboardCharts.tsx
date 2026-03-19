@@ -1,4 +1,4 @@
-import { BarChart } from "./shared/BarChart";
+import { LineChart } from "./shared/LineChart";
 import type { ApiListing, ApiProvider } from "@/types";
 
 interface DashboardChartsProps {
@@ -9,14 +9,16 @@ interface DashboardChartsProps {
 
 export function DashboardCharts({ listings, providers, loading }: DashboardChartsProps) {
   // Build monthly chart data from listing created_at (last 6 months)
-  const chartData = (() => {
+  const monthlyData = (() => {
     const now = new Date();
     return Array.from({ length: 6 }, (_, i) => {
       const month = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
-      return listings.filter((l) => {
+      const value = listings.filter((l) => {
         const d = new Date(l.created_at);
         return d.getMonth() === month.getMonth() && d.getFullYear() === month.getFullYear();
       }).length;
+      const label = month.toLocaleDateString("en-US", { month: "short" });
+      return { value, label };
     });
   })();
 
@@ -31,17 +33,22 @@ export function DashboardCharts({ listings, providers, loading }: DashboardChart
   return (
     <div className="grid lg:grid-cols-3 gap-4">
       {/* Monthly listings chart */}
-      <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-        <div className="flex items-center justify-between mb-4">
+      <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 pt-5 pb-2">
           <h3 className="font-semibold text-slate-900">Monthly Listings Created</h3>
           <span className="text-xs text-slate-400">Last 6 months</span>
         </div>
         {loading ? (
-          <div className="h-48 flex items-center justify-center">
+          <div className="h-64 flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <BarChart values={chartData} />
+          <div className="px-0 pb-0">
+            <LineChart
+              values={monthlyData.map((item) => item.value)}
+              labels={monthlyData.map((item) => item.label)}
+            />
+          </div>
         )}
       </div>
 
@@ -59,7 +66,7 @@ export function DashboardCharts({ listings, providers, loading }: DashboardChart
               </div>
               <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-blue-500 rounded-full" 
+                  className="h-full bg-teal-600 rounded-full" 
                   style={{ width: `${(p.count / maxCount) * 100}%` }} 
                 />
               </div>
