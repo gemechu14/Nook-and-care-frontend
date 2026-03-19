@@ -3,6 +3,7 @@
 export type TabId =
   | "details"
   | "images"
+  | "location"
   | "features";
 
 export interface ListingTabItem {

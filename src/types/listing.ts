@@ -257,6 +257,8 @@ export interface CreateListingRequest {
 
 export type UpdateListingRequest = Partial<CreateListingRequest> & {
   is_featured?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 // ─── Care type label/color maps ───────────────────────────────────────────────

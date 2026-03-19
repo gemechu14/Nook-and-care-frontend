@@ -41,6 +41,7 @@ import { FeaturePanel } from "./_components/FeaturePanel";
 import { ListingDetailsForm } from "./_components/ListingDetailsForm";
 import { ListingManageHeader } from "./_components/ListingManageHeader";
 import { ListingImagesTab } from "./_components/ListingImagesTab";
+import { ListingLocationForm } from "./_components/ListingLocationForm";
 import { ListingManageTabs } from "./_components/ListingManageTabs";
 import type { ListingTabItem, TabId } from "./_components/listingManage.types";
 
@@ -121,6 +122,12 @@ export default function ListingManagePage() {
   const [detailsForm, setDetailsForm] = useState<Partial<UpdateListingRequest>>({});
   const [detailsSaving, setDetailsSaving] = useState(false);
   const [detailsSuccess, setDetailsSuccess] = useState(false);
+  const [locationForm, setLocationForm] = useState<{ latitude: number | null; longitude: number | null }>({
+    latitude: null,
+    longitude: null,
+  });
+  const [locationSaving, setLocationSaving] = useState(false);
+  const [locationSuccess, setLocationSuccess] = useState(false);
 
   const refreshImages = useCallback(async () => {
     if (!id) return;
@@ -158,6 +165,10 @@ export default function ListingManagePage() {
         license_number: data.license_number ?? "",
         has_24_hour_care: data.has_24_hour_care,
         is_featured: data.is_featured,
+      });
+      setLocationForm({
+        latitude: data.latitude ?? null,
+        longitude: data.longitude ?? null,
       });
 
       const imgs = await listingImagesApi.getByListing(listingId).catch(() => []);
@@ -287,6 +298,23 @@ export default function ListingManagePage() {
     }
   };
 
+  const saveLocation = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!listing) return;
+    setLocationSaving(true);
+    setLocationSuccess(false);
+    try {
+      const updated = await listingsApi.update(listing.id, {
+        latitude: locationForm.latitude ?? undefined,
+        longitude: locationForm.longitude ?? undefined,
+      });
+      setListing(updated);
+      setLocationSuccess(true);
+    } finally {
+      setLocationSaving(false);
+    }
+  };
+
   const makeFeatureHandlers = <R extends { id: string }>(
     featureKey: keyof ActiveFeaturesState,
     addFn: (data: Record<string, unknown>) => Promise<R>,
@@ -368,6 +396,11 @@ export default function ListingManagePage() {
       count: images.length,
     },
     {
+      id: "location",
+      label: "Location",
+      description: "Latitude and longitude for maps",
+    },
+    {
       id: "features",
       label: "Features",
       description: "Amenities, services, safety and policies",
@@ -444,185 +477,211 @@ export default function ListingManagePage() {
             <ListingImagesTab listing={listing} images={images} onRefresh={refreshImages} />
           ) : null}
 
+          {activeTab === "location" ? (
+            <ListingLocationForm
+              latitude={locationForm.latitude}
+              longitude={locationForm.longitude}
+              saving={locationSaving}
+              success={locationSuccess}
+              onSave={saveLocation}
+              onLatitudeChange={(v) => setLocationForm((p) => ({ ...p, latitude: v }))}
+              onLongitudeChange={(v) => setLocationForm((p) => ({ ...p, longitude: v }))}
+            />
+          ) : null}
+
           {activeTab === "features" ? (
             <div className="space-y-6">
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-                <h3 className="text-sm font-semibold text-slate-900">Features Workspace</h3>
-                <p className="mt-1 text-sm text-slate-600">
-                  Keep this listing complete by managing all categories from one screen.
-                </p>
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Lifestyle & Daily Living
+                </h4>
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <FeaturePanel
+                      title="Amenities"
+                      catalogItems={catalog.amenities}
+                      activeRecords={activeFeatures.amenities}
+                      getItemId={(record) => record.amenity_id}
+                      savingId={savingId}
+                      {...makeFeatureHandlers(
+                        "amenities",
+                        listingFeaturesApi.amenities.add,
+                        listingFeaturesApi.amenities.addBatch,
+                        listingFeaturesApi.amenities.removeBatch,
+                        (itemId) => ({ listing_id: listing.id, amenity_id: itemId }),
+                        (record) => record.amenity_id,
+                      )}
+                    />
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <FeaturePanel
+                      title="Activities"
+                      catalogItems={catalog.activities}
+                      activeRecords={activeFeatures.activities}
+                      getItemId={(record) => record.activity_id}
+                      savingId={savingId}
+                      {...makeFeatureHandlers(
+                        "activities",
+                        listingFeaturesApi.activities.add,
+                        listingFeaturesApi.activities.addBatch,
+                        listingFeaturesApi.activities.removeBatch,
+                        (itemId) => ({ listing_id: listing.id, activity_id: itemId }),
+                        (record) => record.activity_id,
+                      )}
+                    />
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <FeaturePanel
+                      title="Languages"
+                      catalogItems={catalog.languages}
+                      activeRecords={activeFeatures.languages}
+                      getItemId={(record) => record.language_id}
+                      savingId={savingId}
+                      {...makeFeatureHandlers(
+                        "languages",
+                        listingFeaturesApi.languages.add,
+                        listingFeaturesApi.languages.addBatch,
+                        listingFeaturesApi.languages.removeBatch,
+                        (itemId) => ({ listing_id: listing.id, language_id: itemId }),
+                        (record) => record.language_id,
+                      )}
+                    />
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <FeaturePanel
+                      title="Dining Options"
+                      catalogItems={catalog.diningOptions}
+                      activeRecords={activeFeatures.diningOptions}
+                      getItemId={(record) => record.dining_option_id}
+                      savingId={savingId}
+                      {...makeFeatureHandlers(
+                        "diningOptions",
+                        listingFeaturesApi.diningOptions.add,
+                        listingFeaturesApi.diningOptions.addBatch,
+                        listingFeaturesApi.diningOptions.removeBatch,
+                        (itemId) => ({ listing_id: listing.id, dining_option_id: itemId }),
+                        (record) => record.dining_option_id,
+                      )}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="grid gap-4 xl:grid-cols-2">
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <FeaturePanel
-                    title="Amenities"
-                    catalogItems={catalog.amenities}
-                    activeRecords={activeFeatures.amenities}
-                    getItemId={(record) => record.amenity_id}
-                    savingId={savingId}
-                    {...makeFeatureHandlers(
-                      "amenities",
-                      listingFeaturesApi.amenities.add,
-                      listingFeaturesApi.amenities.addBatch,
-                      listingFeaturesApi.amenities.removeBatch,
-                      (itemId) => ({ listing_id: listing.id, amenity_id: itemId }),
-                      (record) => record.amenity_id,
-                    )}
-                  />
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Compliance, Safety & Policy
+                </h4>
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <FeaturePanel
+                      title="Certifications"
+                      catalogItems={catalog.certifications}
+                      activeRecords={activeFeatures.certifications}
+                      getItemId={(record) => record.certification_id}
+                      savingId={savingId}
+                      {...makeFeatureHandlers(
+                        "certifications",
+                        listingFeaturesApi.certifications.add,
+                        listingFeaturesApi.certifications.addBatch,
+                        listingFeaturesApi.certifications.removeBatch,
+                        (itemId) => ({ listing_id: listing.id, certification_id: itemId }),
+                        (record) => record.certification_id,
+                      )}
+                    />
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <FeaturePanel
+                      title="Safety Features"
+                      catalogItems={catalog.safetyFeatures}
+                      activeRecords={activeFeatures.safetyFeatures}
+                      getItemId={(record) => record.safety_feature_id}
+                      savingId={savingId}
+                      {...makeFeatureHandlers(
+                        "safetyFeatures",
+                        listingFeaturesApi.safetyFeatures.add,
+                        listingFeaturesApi.safetyFeatures.addBatch,
+                        listingFeaturesApi.safetyFeatures.removeBatch,
+                        (itemId) => ({ listing_id: listing.id, safety_feature_id: itemId }),
+                        (record) => record.safety_feature_id,
+                      )}
+                    />
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <FeaturePanel
+                      title="Insurance Options"
+                      catalogItems={catalog.insuranceOptions}
+                      activeRecords={activeFeatures.insuranceOptions}
+                      getItemId={(record) => record.insurance_option_id}
+                      savingId={savingId}
+                      {...makeFeatureHandlers(
+                        "insuranceOptions",
+                        listingFeaturesApi.insuranceOptions.add,
+                        listingFeaturesApi.insuranceOptions.addBatch,
+                        listingFeaturesApi.insuranceOptions.removeBatch,
+                        (itemId) => ({ listing_id: listing.id, insurance_option_id: itemId }),
+                        (record) => record.insurance_option_id,
+                      )}
+                    />
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <FeaturePanel
+                      title="House Rules"
+                      catalogItems={catalog.houseRules}
+                      activeRecords={activeFeatures.houseRules}
+                      getItemId={(record) => record.house_rule_id}
+                      savingId={savingId}
+                      {...makeFeatureHandlers(
+                        "houseRules",
+                        listingFeaturesApi.houseRules.add,
+                        listingFeaturesApi.houseRules.addBatch,
+                        listingFeaturesApi.houseRules.removeBatch,
+                        (itemId) => ({ listing_id: listing.id, house_rule_id: itemId }),
+                        (record) => record.house_rule_id,
+                      )}
+                    />
+                  </div>
                 </div>
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <FeaturePanel
-                    title="Activities"
-                    catalogItems={catalog.activities}
-                    activeRecords={activeFeatures.activities}
-                    getItemId={(record) => record.activity_id}
-                    savingId={savingId}
-                    {...makeFeatureHandlers(
-                      "activities",
-                      listingFeaturesApi.activities.add,
-                      listingFeaturesApi.activities.addBatch,
-                      listingFeaturesApi.activities.removeBatch,
-                      (itemId) => ({ listing_id: listing.id, activity_id: itemId }),
-                      (record) => record.activity_id,
-                    )}
-                  />
-                </div>
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <FeaturePanel
-                    title="Languages"
-                    catalogItems={catalog.languages}
-                    activeRecords={activeFeatures.languages}
-                    getItemId={(record) => record.language_id}
-                    savingId={savingId}
-                    {...makeFeatureHandlers(
-                      "languages",
-                      listingFeaturesApi.languages.add,
-                      listingFeaturesApi.languages.addBatch,
-                      listingFeaturesApi.languages.removeBatch,
-                      (itemId) => ({ listing_id: listing.id, language_id: itemId }),
-                      (record) => record.language_id,
-                    )}
-                  />
-                </div>
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <FeaturePanel
-                    title="Certifications"
-                    catalogItems={catalog.certifications}
-                    activeRecords={activeFeatures.certifications}
-                    getItemId={(record) => record.certification_id}
-                    savingId={savingId}
-                    {...makeFeatureHandlers(
-                      "certifications",
-                      listingFeaturesApi.certifications.add,
-                      listingFeaturesApi.certifications.addBatch,
-                      listingFeaturesApi.certifications.removeBatch,
-                      (itemId) => ({ listing_id: listing.id, certification_id: itemId }),
-                      (record) => record.certification_id,
-                    )}
-                  />
-                </div>
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <FeaturePanel
-                    title="Dining Options"
-                    catalogItems={catalog.diningOptions}
-                    activeRecords={activeFeatures.diningOptions}
-                    getItemId={(record) => record.dining_option_id}
-                    savingId={savingId}
-                    {...makeFeatureHandlers(
-                      "diningOptions",
-                      listingFeaturesApi.diningOptions.add,
-                      listingFeaturesApi.diningOptions.addBatch,
-                      listingFeaturesApi.diningOptions.removeBatch,
-                      (itemId) => ({ listing_id: listing.id, dining_option_id: itemId }),
-                      (record) => record.dining_option_id,
-                    )}
-                  />
-                </div>
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <FeaturePanel
-                    title="Safety Features"
-                    catalogItems={catalog.safetyFeatures}
-                    activeRecords={activeFeatures.safetyFeatures}
-                    getItemId={(record) => record.safety_feature_id}
-                    savingId={savingId}
-                    {...makeFeatureHandlers(
-                      "safetyFeatures",
-                      listingFeaturesApi.safetyFeatures.add,
-                      listingFeaturesApi.safetyFeatures.addBatch,
-                      listingFeaturesApi.safetyFeatures.removeBatch,
-                      (itemId) => ({ listing_id: listing.id, safety_feature_id: itemId }),
-                      (record) => record.safety_feature_id,
-                    )}
-                  />
-                </div>
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <FeaturePanel
-                    title="Insurance Options"
-                    catalogItems={catalog.insuranceOptions}
-                    activeRecords={activeFeatures.insuranceOptions}
-                    getItemId={(record) => record.insurance_option_id}
-                    savingId={savingId}
-                    {...makeFeatureHandlers(
-                      "insuranceOptions",
-                      listingFeaturesApi.insuranceOptions.add,
-                      listingFeaturesApi.insuranceOptions.addBatch,
-                      listingFeaturesApi.insuranceOptions.removeBatch,
-                      (itemId) => ({ listing_id: listing.id, insurance_option_id: itemId }),
-                      (record) => record.insurance_option_id,
-                    )}
-                  />
-                </div>
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <FeaturePanel
-                    title="House Rules"
-                    catalogItems={catalog.houseRules}
-                    activeRecords={activeFeatures.houseRules}
-                    getItemId={(record) => record.house_rule_id}
-                    savingId={savingId}
-                    {...makeFeatureHandlers(
-                      "houseRules",
-                      listingFeaturesApi.houseRules.add,
-                      listingFeaturesApi.houseRules.addBatch,
-                      listingFeaturesApi.houseRules.removeBatch,
-                      (itemId) => ({ listing_id: listing.id, house_rule_id: itemId }),
-                      (record) => record.house_rule_id,
-                    )}
-                  />
-                </div>
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <FeaturePanel
-                    title="Equipment"
-                    catalogItems={catalog.equipment}
-                    activeRecords={activeFeatures.equipment}
-                    getItemId={(record) => record.equipment_id}
-                    savingId={savingId}
-                    {...makeFeatureHandlers(
-                      "equipment",
-                      listingFeaturesApi.equipment.add,
-                      listingFeaturesApi.equipment.addBatch,
-                      listingFeaturesApi.equipment.removeBatch,
-                      (itemId) => ({ listing_id: listing.id, equipment_id: itemId }),
-                      (record) => record.equipment_id,
-                    )}
-                  />
-                </div>
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <FeaturePanel
-                    title="Treatment Services"
-                    catalogItems={catalog.services}
-                    activeRecords={activeFeatures.services}
-                    getItemId={(record) => record.treatment_service_id}
-                    savingId={savingId}
-                    {...makeFeatureHandlers(
-                      "services",
-                      listingFeaturesApi.services.add,
-                      listingFeaturesApi.services.addBatch,
-                      listingFeaturesApi.services.removeBatch,
-                      (itemId) => ({ listing_id: listing.id, treatment_service_id: itemId }),
-                      (record) => record.treatment_service_id,
-                    )}
-                  />
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Care Delivery
+                </h4>
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <FeaturePanel
+                      title="Equipment"
+                      catalogItems={catalog.equipment}
+                      activeRecords={activeFeatures.equipment}
+                      getItemId={(record) => record.equipment_id}
+                      savingId={savingId}
+                      {...makeFeatureHandlers(
+                        "equipment",
+                        listingFeaturesApi.equipment.add,
+                        listingFeaturesApi.equipment.addBatch,
+                        listingFeaturesApi.equipment.removeBatch,
+                        (itemId) => ({ listing_id: listing.id, equipment_id: itemId }),
+                        (record) => record.equipment_id,
+                      )}
+                    />
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <FeaturePanel
+                      title="Treatment Services"
+                      catalogItems={catalog.services}
+                      activeRecords={activeFeatures.services}
+                      getItemId={(record) => record.treatment_service_id}
+                      savingId={savingId}
+                      {...makeFeatureHandlers(
+                        "services",
+                        listingFeaturesApi.services.add,
+                        listingFeaturesApi.services.addBatch,
+                        listingFeaturesApi.services.removeBatch,
+                        (itemId) => ({ listing_id: listing.id, treatment_service_id: itemId }),
+                        (record) => record.treatment_service_id,
+                      )}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
