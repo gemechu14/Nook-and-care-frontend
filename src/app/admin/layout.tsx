@@ -19,6 +19,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (pathname === "/admin") {
       const navParam = searchParams.get("nav");
+      if (!loading && user && navParam === "masterCatalog" && user.role !== "ADMIN") {
+        router.replace("/admin");
+        setActiveNav("dashboard");
+        return;
+      }
       if (
         navParam &&
         ["dashboard", "providers", "listings", "masterCatalog", "subscriptions", "reports"].includes(navParam)
@@ -30,7 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     } else if (pathname.startsWith("/admin/listings")) {
       setActiveNav("listings");
     }
-  }, [pathname, searchParams]);
+  }, [pathname, searchParams, loading, user, router]);
 
   // Auth check
   useEffect(() => {

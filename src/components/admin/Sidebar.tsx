@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/store/authStore";
 
@@ -79,6 +79,11 @@ export function Sidebar({ activeNav, onNavChange, isOpen, onClose, onRefresh, is
   const avatarMenuRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
 
+  const navItems = useMemo(() => {
+    if (user?.role === "ADMIN") return NAV;
+    return NAV.filter((item) => item.id !== "masterCatalog");
+  }, [user?.role]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -142,7 +147,7 @@ export function Sidebar({ activeNav, onNavChange, isOpen, onClose, onRefresh, is
             </p>
           )}
           <ul className="space-y-0.5">
-            {NAV.map(({ id, label, icon }) => (
+            {navItems.map(({ id, label, icon }) => (
               <li key={id}>
                 <button
                   onClick={() => handleNavClick(id)}

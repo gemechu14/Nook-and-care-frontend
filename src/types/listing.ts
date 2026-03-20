@@ -87,6 +87,7 @@ export interface ApiListing {
   equipment?: Array<{
     id: string;
     equipment: Equipment;
+    quantity?: number | null;
     created_at: string;
   }>;
   services?: Array<{
@@ -209,7 +210,6 @@ export interface Language {
 export interface Certification {
   id: string;
   name: string;
-  issuing_body?: string | null;
   description?: string | null;
   created_at?: string;
 }
@@ -229,7 +229,6 @@ export interface SafetyFeature {
 export interface InsuranceOption {
   id: string;
   name: string;
-  type?: string | null;
   description?: string | null;
   created_at?: string;
 }
@@ -250,7 +249,6 @@ export interface Equipment {
 export interface TreatmentService {
   id: string;
   name: string;
-  category?: string | null;
   description?: string | null;
   created_at?: string;
 }

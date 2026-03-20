@@ -8,12 +8,14 @@ import { toursApi } from "@/services/toursService";
 import { reportsApi } from "@/services/reportsService";
 import { dashboardApi, type AdminDashboardSummary } from "@/services/dashboardService";
 import type { ApiListing, ApiProvider, ApiTour, ApiReport } from "@/types";
+import { useAuth } from "@/store/authStore";
 
 import { DashboardOverview } from "@/components/admin/DashboardOverview";
 import { ProvidersSection } from "@/components/admin/sections/ProvidersSection";
 import { ListingsSection } from "@/components/admin/sections/ListingsSection";
 import { SubscriptionsSection } from "@/components/admin/sections/SubscriptionsSection";
 import { ReportsSection } from "@/components/admin/sections/ReportsSection";
+import { MasterCatalogSection } from "@/components/admin/sections/MasterCatalogSection";
 import { Loader } from "@/components/admin/shared/Loader";
 
 interface Stats {
@@ -25,7 +27,14 @@ interface Stats {
 
 export default function AdminDashboard() {
   const searchParams = useSearchParams();
-  const activeNav = (searchParams.get("nav") || "dashboard") as "dashboard" | "providers" | "listings" | "subscriptions" | "reports";
+  const { user } = useAuth();
+  const activeNav = (searchParams.get("nav") || "dashboard") as
+    | "dashboard"
+    | "providers"
+    | "listings"
+    | "masterCatalog"
+    | "subscriptions"
+    | "reports";
 
   const [stats, setStats] = useState<Stats>({
     totalProviders: 0,
@@ -116,12 +125,17 @@ export default function AdminDashboard() {
     // Navigation is handled by the layout
   };
 
+  const normalizeTrendDirection = (value: unknown): "up" | "down" | "flat" => {
+    if (value === "up" || value === "down" || value === "flat") return value;
+    return "flat";
+  };
+
   const STAT_CARDS = [
     {
       label: "Total Providers",
       value: stats.totalProviders,
       trend: summaryTrends?.total_providers.percent_label || "-> 0.0%",
-      trendDirection: summaryTrends?.total_providers.direction || "flat",
+      trendDirection: normalizeTrendDirection(summaryTrends?.total_providers.direction),
       icon: (
         <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -143,7 +157,7 @@ export default function AdminDashboard() {
       label: "Active Listings",
       value: stats.totalActiveListings,
       trend: summaryTrends?.total_active_listings.percent_label || "-> 0.0%",
-      trendDirection: summaryTrends?.total_active_listings.direction || "flat",
+      trendDirection: normalizeTrendDirection(summaryTrends?.total_active_listings.direction),
       icon: (
         <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -154,7 +168,7 @@ export default function AdminDashboard() {
       label: "Open Reports",
       value: stats.totalReports,
       trend: summaryTrends?.total_reports.percent_label || "-> 0.0%",
-      trendDirection: summaryTrends?.total_reports.direction || "flat",
+      trendDirection: normalizeTrendDirection(summaryTrends?.total_reports.direction),
       icon: (
         <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -163,12 +177,22 @@ export default function AdminDashboard() {
     },
   ];
 
-  if (dataLoading && listings.length === 0) {
+  const initialDashboardLoading = activeNav !== "masterCatalog" && dataLoading && listings.length === 0;
+  if (initialDashboardLoading) {
     return <Loader />;
   }
 
   return (
     <div className="space-y-6">
+      {activeNav === "masterCatalog" && user?.role !== "ADMIN" ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">Access restricted</h2>
+          <p className="text-sm text-slate-600 mt-2">
+            Master catalog management is only available to platform administrators.
+          </p>
+        </div>
+      ) : null}
+
       {activeNav === "dashboard" && (
         <DashboardOverview
           stats={STAT_CARDS}
@@ -192,6 +216,8 @@ export default function AdminDashboard() {
       {activeNav === "listings" && (
         <ListingsSection loading={dataLoading} />
       )}
+
+      {activeNav === "masterCatalog" && user?.role === "ADMIN" && <MasterCatalogSection />}
 
       {activeNav === "subscriptions" && (
         <SubscriptionsSection />
