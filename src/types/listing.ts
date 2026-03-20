@@ -190,50 +190,69 @@ export interface Amenity {
   id: string;
   name: string;
   category: string | null;
+  icon?: string | null;
+  created_at?: string;
 }
 export interface Activity {
   id: string;
   name: string;
   category: string | null;
+  description?: string | null;
+  created_at?: string;
 }
 export interface Language {
   id: string;
   name: string;
   code: string | null;
+  created_at?: string;
 }
 export interface Certification {
   id: string;
   name: string;
-  issuing_body: string | null;
+  issuing_body?: string | null;
+  description?: string | null;
+  created_at?: string;
 }
 export interface DiningOption {
   id: string;
   name: string;
+  description?: string | null;
+  created_at?: string;
 }
 export interface SafetyFeature {
   id: string;
   name: string;
   category: string | null;
+  description?: string | null;
+  created_at?: string;
 }
 export interface InsuranceOption {
   id: string;
   name: string;
-  type: string | null;
+  type?: string | null;
+  description?: string | null;
+  created_at?: string;
 }
 export interface HouseRule {
   id: string;
   name: string;
   category: string | null;
+  description?: string | null;
+  created_at?: string;
 }
 export interface Equipment {
   id: string;
   name: string;
   category: string | null;
+  description?: string | null;
+  created_at?: string;
 }
 export interface TreatmentService {
   id: string;
   name: string;
-  category: string | null;
+  category?: string | null;
+  description?: string | null;
+  created_at?: string;
 }
 
 // ─── Request types ────────────────────────────────────────────────────────────

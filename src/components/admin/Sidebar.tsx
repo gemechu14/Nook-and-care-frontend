@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/store/authStore";
 
-export type NavId = "dashboard" | "providers" | "listings" | "subscriptions" | "reports";
+export type NavId = "dashboard" | "providers" | "listings" | "masterCatalog" | "subscriptions" | "reports";
 
 interface SidebarProps {
   activeNav: NavId;
@@ -40,6 +40,15 @@ const NAV = [
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      </svg>
+    )
+  },
+  { 
+    id: "masterCatalog" as NavId,
+    label: "Master Catalog",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 19V5a2 2 0 012-2h12a2 2 0 012 2v14M9 17h6M9 9h6M9 13h6" />
       </svg>
     )
   },

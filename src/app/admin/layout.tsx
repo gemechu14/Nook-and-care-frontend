@@ -19,7 +19,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (pathname === "/admin") {
       const navParam = searchParams.get("nav");
-      if (navParam && ["dashboard", "providers", "listings", "subscriptions", "reports"].includes(navParam)) {
+      if (
+        navParam &&
+        ["dashboard", "providers", "listings", "masterCatalog", "subscriptions", "reports"].includes(navParam)
+      ) {
         setActiveNav(navParam as NavId);
       } else {
         setActiveNav("dashboard");
