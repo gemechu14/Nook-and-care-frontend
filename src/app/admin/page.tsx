@@ -130,7 +130,15 @@ export default function AdminDashboard() {
     return "flat";
   };
 
-  const STAT_CARDS = [
+  type StatCard = {
+    label: string;
+    value: number;
+    trend: string;
+    trendDirection: "up" | "down" | "flat";
+    icon: React.ReactNode;
+  };
+
+  const STAT_CARDS: StatCard[] = [
     {
       label: "Total Providers",
       value: stats.totalProviders,

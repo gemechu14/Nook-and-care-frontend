@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import ListingCard from "@/components/ui/ListingCard";
 import { listingsApi } from "@/services/listingService";
@@ -65,7 +65,7 @@ const availabilityOptions = [
 
 type SortOption = "highest-rated" | "price-low-high" | "price-high-low" | "most-available";
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams();
   
   // Map care type IDs from URL to display names
@@ -1066,5 +1066,19 @@ export default function SearchPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <SearchPageContent />
+    </Suspense>
   );
 }

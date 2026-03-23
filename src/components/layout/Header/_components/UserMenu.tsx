@@ -36,7 +36,7 @@ export function UserMenu({
     : "?";
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative" ref={menuRef as React.RefObject<HTMLDivElement>}>
       <button
         type="button"
         onClick={onToggle}

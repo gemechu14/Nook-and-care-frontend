@@ -9,6 +9,7 @@ import {
   useApproveTourMutation,
   useCompleteTourMutation,
   useGetToursQuery,
+  type ToursPageResponse,
 } from "@/store/toursApi";
 
 interface ToursSectionProps {
@@ -22,7 +23,7 @@ export function ToursSection({ providerId }: ToursSectionProps) {
   const [menuOpenForId, setMenuOpenForId] = useState<string | null>(null);
 
   const {
-    data: toursPage,
+    data,
     isLoading,
     isFetching,
     isError,
@@ -30,6 +31,7 @@ export function ToursSection({ providerId }: ToursSectionProps) {
     { page, size: pageSize },
     { skip: !providerId }
   );
+  const toursPage = data as ToursPageResponse | undefined;
 
   const [approveTour] = useApproveTourMutation();
   const [completeTour] = useCompleteTourMutation();

@@ -23,7 +23,7 @@ import { ALL_CATALOG_KEYS, TOP_TABS, type PageSize } from "../_lib/constants";
 import { CATALOG_META } from "../_lib/catalogConfig";
 
 const DEFAULT_CATALOG_DATA = (): Record<CatalogKey, CatalogItem[]> =>
-  Object.fromEntries(ALL_CATALOG_KEYS.map((k) => [k, []])) as Record<CatalogKey, CatalogItem[]>;
+  Object.fromEntries(ALL_CATALOG_KEYS.map((k) => [k, []])) as unknown as Record<CatalogKey, CatalogItem[]>;
 
 export function useMasterCatalog() {
   const metaByKey = useMemo(() => {
